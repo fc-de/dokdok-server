@@ -1,0 +1,22 @@
+spring:
+  # Database Configuration
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/dokdok}
+    username: ${DB_USERNAME:dokdok}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # CI 테스트 전용으로 매 실행마다 스키마 초기화
+    show-sql: false
+    open-in-view: false  # OSIV 경고 제거
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+        javax:
+          persistence:
+            schema-generation:
+              create-source: metadata

@@ -1,6 +1,6 @@
 spring:
   application:
-    name: dkdk
+    name: dokdok
 
   datasource:
     hikari:

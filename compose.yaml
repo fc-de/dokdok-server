@@ -1,4 +1,4 @@
-name: dkdk
+name: dokdok
 
 services:
   app:
@@ -26,7 +26,7 @@ services:
 
   postgres:
     profiles: ["app"]
-    image: 'postgres:latest'
+    image: 'postgres:16'
     container_name: dokdok-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dokdok}

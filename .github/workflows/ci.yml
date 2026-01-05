@@ -17,21 +17,21 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: dkdk
-          POSTGRES_USER: dkdk
+          POSTGRES_DB: dokdok
+          POSTGRES_USER: dokdok
           POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U dkdk -d dkdk"
+          --health-cmd "pg_isready -U dokdok -d dokdok"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     env:
       SPRING_PROFILES_ACTIVE: test
-      TEST_DB_URL: jdbc:postgresql://localhost:5432/dkdk
-      TEST_DB_USERNAME: dkdk
+      TEST_DB_URL: jdbc:postgresql://localhost:5432/dokdok
+      TEST_DB_USERNAME: dokdok
       TEST_DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
 
     steps:
