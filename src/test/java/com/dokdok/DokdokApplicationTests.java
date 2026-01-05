@@ -12,12 +12,4 @@ class DokdokApplicationTests {
 	void contextLoads() {
 	}
 
-    @Test
-    void checkEnvironmentVariable() {
-        String password = System.getenv("DB_PASSWORD");
-        System.out.println("DB_PASSWORD from env: " + password);
-
-        String fromProperty = System.getProperty("DB_PASSWORD");
-        System.out.println("DB_PASSWORD from property: " + fromProperty);
-    }
 }
