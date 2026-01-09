@@ -1,6 +1,6 @@
-package com.dokdok.global.exception;
+package com.dokdok._global.exception;
 
-import com.dokdok.global.response.ApiResponse;
+import com.dokdok._global.response.ApiResponse;
 import tools.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;

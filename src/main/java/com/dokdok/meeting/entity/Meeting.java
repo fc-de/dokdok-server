@@ -2,7 +2,7 @@ package com.dokdok.meeting.entity;
 
 import com.dokdok.book.entity.Book;
 import com.dokdok.gathering.entity.Gathering;
-import com.dokdok.global.BaseTimeEntity;
+import com.dokdok._global.BaseTimeEntity;
 import com.dokdok.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

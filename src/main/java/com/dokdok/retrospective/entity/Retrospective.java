@@ -1,6 +1,6 @@
 package com.dokdok.retrospective.entity;
 
-import com.dokdok.global.BaseTimeEntity;
+import com.dokdok._global.BaseTimeEntity;
 import com.dokdok.meeting.entity.Meeting;
 import com.dokdok.user.entity.User;
 import jakarta.persistence.*;

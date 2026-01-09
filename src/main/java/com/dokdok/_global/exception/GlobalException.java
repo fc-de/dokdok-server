@@ -1,4 +1,4 @@
-package com.dokdok.global.exception;
+package com.dokdok._global.exception;
 
 import lombok.Getter;
 

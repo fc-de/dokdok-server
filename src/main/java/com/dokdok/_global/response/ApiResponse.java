@@ -1,4 +1,4 @@
-package com.dokdok.global.response;
+package com.dokdok._global.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.http.HttpStatus;

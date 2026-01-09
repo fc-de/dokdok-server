@@ -1,6 +1,6 @@
 package com.dokdok.user.entity;
 
-import com.dokdok.global.BaseTimeEntity;
+import com.dokdok._global.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

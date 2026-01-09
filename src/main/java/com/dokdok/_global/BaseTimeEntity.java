@@ -1,4 +1,4 @@
-package com.dokdok.global;
+package com.dokdok._global;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
