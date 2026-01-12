@@ -11,10 +11,11 @@ spring:
       max-lifetime: 1800000  # 커넥션 최대 수명 (30분)
       leak-detection-threshold: 60000  # 커넥션 누수 감지 (1분)
 
-server:
-  forward-headers-strategy: framework  # Nginx X-Forwarded 헤더 인식
-  servlet:
-    session:
-      cookie:
-        same-site: none  # 크로스 오리진 요청에서 쿠키 전송 허용
-        secure: true     # HTTPS에서만 쿠키 전송 (same-site=none일 때 필수)
+app:
+  frontend:
+    default-url: http://localhost:3000
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:5173
+      - https://yourdomain.com
+      - https://dev.yourdomain.com

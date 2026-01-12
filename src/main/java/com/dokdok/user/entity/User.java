@@ -1,6 +1,7 @@
 package com.dokdok.user.entity;
 
 import com.dokdok._global.BaseTimeEntity;
+import com.dokdok.oauth2.OAuth2UserInfo;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -36,4 +37,12 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "kakao_id", nullable = false)
     private Long kakaoId;
+
+    public static User of(OAuth2UserInfo oAuth2UserInfo) {
+
+        return User.builder()
+                .kakaoId(oAuth2UserInfo.getId())
+                .userEmail(oAuth2UserInfo.getEmail())
+                .build();
+    }
 }
