@@ -1,9 +1,6 @@
 package com.dokdok.gathering.service;
 
-import com.dokdok.gathering.entity.Gathering;
-import com.dokdok.gathering.entity.GatheringMember;
-import com.dokdok.gathering.entity.GatheringRole;
-import com.dokdok.gathering.entity.GatheringMemberStatus;
+import com.dokdok.gathering.entity.*;
 import com.dokdok.gathering.exception.GatheringErrorCode;
 import com.dokdok.gathering.exception.GatheringException;
 import com.dokdok.gathering.repository.GatheringMemberRepository;
@@ -52,6 +49,10 @@ public class GatheringValidator {
 				.findByGatheringIdAndUserId(gatheringId, userId)
 				.orElseThrow(() -> new GatheringException(GatheringErrorCode.NOT_GATHERING_MEMBER));
 
+		if(member.getMemberStatus() != GatheringMemberStatus.ACTIVE) {
+			throw new GatheringException(GatheringErrorCode.NOT_GATHERING_MEMBER);
+		}
+
 		if (member.getRole() != GatheringRole.LEADER) {
 			throw new GatheringException(GatheringErrorCode.NOT_GATHERING_LEADER);
 		}
@@ -69,9 +70,15 @@ public class GatheringValidator {
 	 * 멤버십을 검증하고 GatheringMember를 반환합니다.
 	 */
 	public GatheringMember validateAndGetMember(Long gatheringId, Long userId) {
-		return gatheringMemberRepository
+		GatheringMember member = gatheringMemberRepository
 				.findByGatheringIdAndUserId(gatheringId, userId)
 				.orElseThrow(() -> new GatheringException(GatheringErrorCode.NOT_GATHERING_MEMBER));
+
+		if(member.getMemberStatus() != GatheringMemberStatus.ACTIVE) {
+			throw new GatheringException(GatheringErrorCode.NOT_GATHERING_MEMBER);
+		}
+
+		return member;
 	}
 
     /**
