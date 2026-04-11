@@ -93,21 +93,6 @@ public class GatheringValidator {
                 .orElseThrow(() -> new GatheringException(GatheringErrorCode.GATHERING_NOT_FOUND));
     }
 
-    /**
-     * 이미 모임에 가입했거나 가입 신청을 했는지 검증합니다.
-     */
-	public void validateJoinedGathering(Long gatheringId, Long userId) {
-		gatheringMemberRepository
-				.findByGatheringIdAndUserId(gatheringId, userId)
-				.ifPresent(member -> {
-					if (member.getMemberStatus() == GatheringMemberStatus.ACTIVE) {
-						throw new GatheringException(GatheringErrorCode.ALREADY_GATHERING_MEMBER);
-					} else if (member.getMemberStatus() == GatheringMemberStatus.PENDING) {
-						throw new GatheringException(GatheringErrorCode.JOIN_REQUEST_ALREADY_PENDING);
-					}
-				});
-	}
-
 	/**
 	 * 즐겨찾기 된 모임이 4개 이상인지 검증합니다.
 	 */

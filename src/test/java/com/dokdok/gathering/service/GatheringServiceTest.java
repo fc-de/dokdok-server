@@ -1036,7 +1036,6 @@ class GatheringServiceTest {
 
 		securityUtilMock.verify(SecurityUtil::getCurrentUserEntity, times(1));
 		verify(gatheringValidator, times(1)).validateInvitationLink(invitationLink);
-		verify(gatheringValidator, times(1)).validateJoinedGathering(1L, 3L);
 		verify(gatheringMemberRepository, times(1)).save(any(GatheringMember.class));
 	}
 
@@ -1058,7 +1057,6 @@ class GatheringServiceTest {
 
 		securityUtilMock.verify(SecurityUtil::getCurrentUserEntity, times(1));
 		verify(gatheringValidator, times(1)).validateInvitationLink(invalidLink);
-		verify(gatheringValidator, times(0)).validateJoinedGathering(any(), any());
 		verify(gatheringMemberRepository, times(0)).save(any());
 	}
 
@@ -1071,8 +1069,8 @@ class GatheringServiceTest {
 		securityUtilMock.when(SecurityUtil::getCurrentUserEntity).thenReturn(member);
 
 		given(gatheringValidator.validateInvitationLink(invitationLink)).willReturn(gathering1);
-		doThrow(new GatheringException(GatheringErrorCode.ALREADY_GATHERING_MEMBER))
-				.when(gatheringValidator).validateJoinedGathering(1L, 2L);
+		given(gatheringMemberRepository.findByGatheringIdAndUserId(1L, 2L))
+				.willReturn(Optional.of(normalMember));
 
 		// when & then
 		assertThatThrownBy(() -> gatheringService.joinGathering(invitationLink))
@@ -1081,7 +1079,6 @@ class GatheringServiceTest {
 
 		securityUtilMock.verify(SecurityUtil::getCurrentUserEntity, times(1));
 		verify(gatheringValidator, times(1)).validateInvitationLink(invitationLink);
-		verify(gatheringValidator, times(1)).validateJoinedGathering(1L, 2L);
 		verify(gatheringMemberRepository, times(0)).save(any());
 	}
 
@@ -1094,8 +1091,8 @@ class GatheringServiceTest {
 		securityUtilMock.when(SecurityUtil::getCurrentUserEntity).thenReturn(pendingUser);
 
 		given(gatheringValidator.validateInvitationLink(invitationLink)).willReturn(gathering1);
-		doThrow(new GatheringException(GatheringErrorCode.JOIN_REQUEST_ALREADY_PENDING))
-				.when(gatheringValidator).validateJoinedGathering(1L, 4L);
+		given(gatheringMemberRepository.findByGatheringIdAndUserId(1L, 4L))
+				.willReturn(Optional.of(pendingMember));
 
 		// when & then
 		assertThatThrownBy(() -> gatheringService.joinGathering(invitationLink))
@@ -1104,7 +1101,6 @@ class GatheringServiceTest {
 
 		securityUtilMock.verify(SecurityUtil::getCurrentUserEntity, times(1));
 		verify(gatheringValidator, times(1)).validateInvitationLink(invitationLink);
-		verify(gatheringValidator, times(1)).validateJoinedGathering(1L, 4L);
 		verify(gatheringMemberRepository, times(0)).save(any());
 	}
 
