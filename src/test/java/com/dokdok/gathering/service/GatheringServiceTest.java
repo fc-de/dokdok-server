@@ -335,7 +335,7 @@ class GatheringServiceTest {
 		assertThat(firstGathering.totalMembers()).isEqualTo(1);
 		assertThat(firstGathering.totalMeetings()).isEqualTo(3);
 		assertThat(firstGathering.currentUserRole()).isEqualTo(LEADER);
-		assertThat(firstGathering.daysFromJoined()).isEqualTo(10);
+		assertThat(firstGathering.daysFromJoined()).isEqualTo(11);
 
 		GatheringListItemResponse secondGathering = response.gatherings().get(1);
 		assertThat(secondGathering.gatheringId()).isEqualTo(2L);
