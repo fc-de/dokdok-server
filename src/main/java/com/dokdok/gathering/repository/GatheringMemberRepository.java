@@ -46,6 +46,7 @@ public interface GatheringMemberRepository extends JpaRepository<GatheringMember
             "JOIN FETCH gm.user u " +
             "JOIN FETCH gm.gathering g " +
             "WHERE gm.gathering.id = :gatheringId " +
+            "AND gm.memberStatus = 'ACTIVE' " +
             "AND gm.removedAt IS NULL")
     List<GatheringMember> findAllMembersByGatheringId(@Param("gatheringId") Long gatheringId);
 
