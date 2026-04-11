@@ -81,7 +81,7 @@ import java.time.temporal.ChronoUnit;
         return (int) ChronoUnit.DAYS.between(
                 this.joinedAt.toLocalDate(),
                 LocalDate.now()
-        );
+        ) + 1;
     }
 
     public void remove() {
