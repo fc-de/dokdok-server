@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -89,12 +90,26 @@ public class GatheringService {
     public GatheringJoinResponse joinGathering(String invitationLink) {
 
         User user = SecurityUtil.getCurrentUserEntity();
-
         Gathering gathering = gatheringValidator.validateInvitationLink(invitationLink);
-        gatheringValidator.validateJoinedGathering(gathering.getId(), user.getId());
+
+        // 기존 멤버십 확인
+        Optional<GatheringMember> existingMember = gatheringMemberRepository.findByGatheringIdAndUserId(gathering.getId(), user.getId());
+
+        if(existingMember.isPresent()) {
+            GatheringMember member = existingMember.get();
+            GatheringMemberStatus status = member.getMemberStatus();
+
+            if(status == GatheringMemberStatus.ACTIVE) {
+                throw new GatheringException(GatheringErrorCode.ALREADY_GATHERING_MEMBER);
+            }else if(status == GatheringMemberStatus.PENDING) {
+                throw new GatheringException(GatheringErrorCode.JOIN_REQUEST_ALREADY_PENDING);
+            }else if(status == GatheringMemberStatus.REJECTED) {
+                member.reapplyJoinRequest();
+                return GatheringJoinResponse.from(member);
+            }
+        }
 
         GatheringMember member = saveGatheringMember(gathering, user, GatheringRole.MEMBER, GatheringMemberStatus.PENDING, null);
-
         return GatheringJoinResponse.from(member);
     }
 

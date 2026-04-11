@@ -98,4 +98,9 @@ import java.time.temporal.ChronoUnit;
     public void updateFavorite() {
         this.isFavorite = !isFavorite;
     }
+
+    public void reapplyJoinRequest() {
+        this.memberStatus = GatheringMemberStatus.PENDING;
+        this.joinedAt = null;
+    }
 }
