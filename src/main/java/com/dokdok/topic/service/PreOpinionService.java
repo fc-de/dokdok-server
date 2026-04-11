@@ -17,6 +17,8 @@ import com.dokdok.storage.service.StorageService;
 import com.dokdok.topic.dto.response.PreOpinionResponse;
 import com.dokdok.topic.dto.response.PreOpinionResponse.BookReviewInfo;
 import com.dokdok.topic.entity.TopicAnswer;
+import com.dokdok.topic.exception.TopicErrorCode;
+import com.dokdok.topic.exception.TopicException;
 import com.dokdok.topic.repository.TopicAnswerRepository;
 import com.dokdok.topic.repository.TopicRepository;
 import com.dokdok.user.entity.User;
@@ -24,8 +26,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,7 +51,7 @@ public class PreOpinionService {
         validateAccess(gatheringId, meetingId, userId);
 
         List<PreOpinionResponse.TopicInfo> topicInfos = buildTopicInfos(meetingId);
-        List<MeetingMember> meetingMembers = meetingMemberRepository.findAllByMeetingId(meetingId);
+        List<MeetingMember> meetingMembers = meetingMemberRepository.findAllByMeetingIdOrderByTopicAnswerDate(meetingId);
 
         List<PreOpinionResponse.MemberPreOpinion> preOpinionData = buildPreOpinionData(gatheringId, meetingId, meetingMembers);
 
@@ -82,9 +82,14 @@ public class PreOpinionService {
     }
 
     private List<PreOpinionResponse.TopicInfo> buildTopicInfos(Long meetingId) {
-        return topicRepository.findConfirmedTopics(meetingId).stream()
+        List<PreOpinionResponse.TopicInfo> topicInfos = topicRepository.findConfirmedTopics(meetingId).stream()
                 .map(PreOpinionResponse.TopicInfo::from)
                 .toList();
+
+        if(topicInfos.isEmpty()) {
+            throw new TopicException(TopicErrorCode.TOPIC_NOT_FOUND);
+        }
+        return topicInfos;
     }
 
     private List<PreOpinionResponse.MemberPreOpinion> buildPreOpinionData(Long gatheringId, Long meetingId, List<MeetingMember> meetingMembers) {
@@ -96,8 +101,7 @@ public class PreOpinionService {
             Map<Long, GatheringRole> gatheringRoleByUserId,
             Map<Long, BookReview> bookReviewByUserId,
             Map<Long, List<BookReviewKeyword>> keywordsByReviewId,
-            Map<Long, List<PreOpinionResponse.TopicOpinion>> topicAnswersByUserId,
-            Map<Long, LocalDateTime> earliestAnswerByUserId
+            Map<Long, List<PreOpinionResponse.TopicOpinion>> topicAnswersByUserId
     ) {}
 
     private PreOpinionMaps fetchPreOpinionMaps(Long gatheringId, Long meetingId, List<MeetingMember> meetingMembers) {
@@ -139,28 +143,16 @@ public class PreOpinionService {
                                 )
                         ));
 
-        Map<Long, LocalDateTime> earliestAnswerByUserId = allTopicAnswers.stream()
-                .collect(Collectors.toMap(
-                        ta -> ta.getUser().getId(),
-                        TopicAnswer::getCreatedAt,
-                        (a, b) -> a.isBefore(b) ? a : b
-                ));
-
         return new PreOpinionMaps(
                 gatheringRoleByUserId,
                 bookReviewByUserId,
                 keywordsByReviewId,
-                topicAnswersByUserId,
-                earliestAnswerByUserId
+                topicAnswersByUserId
         );
     }
 
     private List<PreOpinionResponse.MemberPreOpinion> assembleMembers(List<MeetingMember> meetingMembers, PreOpinionMaps maps) {
         return meetingMembers.stream()
-                .sorted(Comparator.comparing(
-                        (MeetingMember mm) -> maps.earliestAnswerByUserId().getOrDefault(
-                                mm.getUser().getId(), LocalDateTime.MAX)
-                ))
                 .map(mm -> toMemberPreOpinion(mm, maps))
                 .toList();
     }
