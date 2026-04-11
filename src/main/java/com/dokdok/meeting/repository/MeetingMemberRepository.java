@@ -20,6 +20,26 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
 
     List<MeetingMember> findAllByMeetingId(Long meetingId);
 
+    @Query("""
+      SELECT mm FROM MeetingMember mm
+      JOIN FETCH mm.user u
+      JOIN FETCH mm.meeting m
+      WHERE mm.meeting.id = :meetingId
+      AND mm.canceledAt IS NULL
+      ORDER BY (
+          SELECT MIN(ta.createdAt)
+          FROM TopicAnswer ta
+          WHERE ta.user = mm.user
+          AND ta.topic.meeting.id = :meetingId
+          AND ta.topic.topicStatus = com.dokdok.topic.entity.TopicStatus.CONFIRMED
+          AND ta.isSubmitted = true
+      ) DESC NULLS LAST
+      """)
+    List<MeetingMember> findAllByMeetingIdOrderByTopicAnswerDate(
+            @Param("meetingId") Long meetingId
+    );
+
+
     @Query("""                                                                                                                                                           
             SELECT mm FROM MeetingMember mm
             JOIN FETCH mm.user u
