@@ -72,10 +72,18 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
             """)
     int countActiveMembers(@Param("meetingId") Long meetingId);
 
-    boolean existsByMeetingIdAndUserId(
-            Long meetingId,
-            Long userId
+    @Query("""
+      SELECT COUNT(mm) > 0 FROM MeetingMember mm
+      WHERE mm.meeting.id = :meetingId
+      AND mm.user.id = :userId
+      AND mm.canceledAt IS NULL
+      """)
+    boolean existsActiveMemberByMeetingIdAndUserId(
+            @Param("meetingId") Long meetingId,
+            @Param("userId") Long userId
     );
+
+    boolean existsByMeetingIdAndUserId(Long meetingId, Long userId);
 
     @Query("""
             SELECT mm.meeting.id FROM MeetingMember mm

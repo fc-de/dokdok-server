@@ -11,6 +11,7 @@ import com.dokdok.meeting.entity.MeetingMember;
 import com.dokdok.meeting.entity.MeetingStatus;
 import com.dokdok.meeting.exception.MeetingErrorCode;
 import com.dokdok.meeting.exception.MeetingException;
+import com.dokdok.meeting.repository.MeetingMemberRepository;
 import com.dokdok.meeting.service.MeetingValidator;
 import com.dokdok.topic.dto.request.ConfirmTopicsRequest;
 import com.dokdok.topic.dto.request.SuggestTopicRequest;
@@ -62,6 +63,9 @@ class TopicServiceTest {
 
     @Mock
     private TopicAnswerRepository topicAnswerRepository;
+
+    @Mock
+    private MeetingMemberRepository meetingMemberRepository;
 
     @Mock
     private MeetingValidator meetingValidator;
@@ -604,6 +608,9 @@ class TopicServiceTest {
                 doNothing().when(meetingValidator)
                         .validateMeetingInGathering(meetingId, gatheringId);
 
+                given(meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId))
+                        .willReturn(true);
+
                 given(topicRepository.canConfirmTopic(meetingId, userId))
                         .willReturn(false);
 
@@ -635,6 +642,7 @@ class TopicServiceTest {
 
                 assertThat(response.actions().canConfirm()).isFalse();
                 assertThat(response.actions().canSuggest()).isTrue();
+                assertThat(response.actions().canLike()).isTrue();
 
                 assertThat(response.items().get(0).title()).isEqualTo("의미 있는 이름 짓기");
                 assertThat(response.items().get(0).likeCount()).isEqualTo(5);
@@ -714,6 +722,7 @@ class TopicServiceTest {
                 assertThat(response.totalCount()).isEqualTo(1);
                 assertThat(response.actions().canConfirm()).isFalse();
                 assertThat(response.actions().canSuggest()).isFalse();
+                assertThat(response.actions().canLike()).isFalse();
 
                 verify(topicRepository, never()).findDeletableTopicIds(any(), any());
                 verify(topicLikeRepository, never()).findLikedTopicIds(any(), any());
@@ -737,6 +746,9 @@ class TopicServiceTest {
 
                 doNothing().when(meetingValidator)
                         .validateMeetingInGathering(meetingId, gatheringId);
+
+                given(meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId))
+                        .willReturn(true);
 
                 given(topicRepository.canConfirmTopic(meetingId, userId))
                         .willReturn(false);
@@ -818,6 +830,9 @@ class TopicServiceTest {
                 doNothing().when(meetingValidator)
                         .validateMeetingInGathering(meetingId, gatheringId);
 
+                given(meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId))
+                        .willReturn(true);
+
                 given(topicRepository.canConfirmTopic(meetingId, userId))
                         .willReturn(false);
 
@@ -884,6 +899,9 @@ class TopicServiceTest {
 
                 doNothing().when(meetingValidator)
                         .validateMeetingInGathering(meetingId, gatheringId);
+
+                given(meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId))
+                        .willReturn(true);
 
                 given(topicRepository.canConfirmTopic(meetingId, userId))
                         .willReturn(false);
@@ -1282,7 +1300,7 @@ class TopicServiceTest {
                 given(topicValidator.getTopicInMeeting(topicId, meetingId))
                         .willReturn(topicWithLikeCount);
 
-                given(topicLikeRepository.existsByTopicId(topicId))
+                given(topicLikeRepository.existsByTopicIdAndUserId(topicId, testUser.getId()))
                         .willReturn(false);
 
                 given(topicLikeRepository.save(any(TopicLike.class)))
@@ -1300,7 +1318,7 @@ class TopicServiceTest {
                 verify(meetingValidator).validateMeetingInGathering(meetingId, gatheringId);
                 verify(meetingValidator).validateMeetingMember(meetingId, testUser.getId());
                 verify(topicValidator).getTopicInMeeting(topicId, meetingId);
-                verify(topicLikeRepository).existsByTopicId(topicId);
+                verify(topicLikeRepository).existsByTopicIdAndUserId(topicId, testUser.getId());
                 verify(topicLikeRepository).save(any(TopicLike.class));
                 verify(topicRepository).increaseLikeCount(topicId);
                 verify(topicLikeRepository, never()).deleteByTopicIdAndUserId(any(), any());
@@ -1339,7 +1357,7 @@ class TopicServiceTest {
                 given(topicValidator.getTopicInMeeting(topicId, meetingId))
                         .willReturn(topicWithLikeCount);
 
-                given(topicLikeRepository.existsByTopicId(topicId))
+                given(topicLikeRepository.existsByTopicIdAndUserId(topicId, testUser.getId()))
                         .willReturn(true);
 
                 TopicLikeResponse response =
@@ -1354,7 +1372,7 @@ class TopicServiceTest {
                 verify(meetingValidator).validateMeetingInGathering(meetingId, gatheringId);
                 verify(meetingValidator).validateMeetingMember(meetingId, testUser.getId());
                 verify(topicValidator).getTopicInMeeting(topicId, meetingId);
-                verify(topicLikeRepository).existsByTopicId(topicId);
+                verify(topicLikeRepository).existsByTopicIdAndUserId(topicId, testUser.getId());
                 verify(topicLikeRepository).deleteByTopicIdAndUserId(topicId, testUser.getId());
                 verify(topicRepository).decreaseLikeCount(topicId);
                 verify(topicLikeRepository, never()).save(any(TopicLike.class));
@@ -1381,7 +1399,7 @@ class TopicServiceTest {
                 verify(gatheringValidator, never()).validateGathering(any());
                 verify(meetingValidator, never()).validateMeetingInGathering(any(), any());
                 verify(topicValidator, never()).getTopicInMeeting(any(), any());
-                verify(topicLikeRepository, never()).existsByTopicId(any());
+                verify(topicLikeRepository, never()).existsByTopicIdAndUserId(any(), any());
             }
         }
 
@@ -1408,7 +1426,7 @@ class TopicServiceTest {
 
                 verify(meetingValidator, never()).validateMeetingInGathering(any(), any());
                 verify(topicValidator, never()).getTopicInMeeting(any(), any());
-                verify(topicLikeRepository, never()).existsByTopicId(any());
+                verify(topicLikeRepository, never()).existsByTopicIdAndUserId(any(), any());
             }
         }
 
@@ -1438,7 +1456,7 @@ class TopicServiceTest {
 
                 verify(meetingValidator, never()).validateMeetingMember(any(), any());
                 verify(topicValidator, never()).getTopicInMeeting(any(), any());
-                verify(topicLikeRepository, never()).existsByTopicId(any());
+                verify(topicLikeRepository, never()).existsByTopicIdAndUserId(any(), any());
             }
         }
 
@@ -1470,7 +1488,7 @@ class TopicServiceTest {
                                 MeetingErrorCode.NOT_MEETING_MEMBER);
 
                 verify(topicValidator, never()).getTopicInMeeting(any(), any());
-                verify(topicLikeRepository, never()).existsByTopicId(any());
+                verify(topicLikeRepository, never()).existsByTopicIdAndUserId(any(), any());
             }
         }
 
@@ -1503,7 +1521,7 @@ class TopicServiceTest {
                         .hasFieldOrPropertyWithValue("errorCode",
                                 TopicErrorCode.TOPIC_NOT_FOUND);
 
-                verify(topicLikeRepository, never()).existsByTopicId(any());
+                verify(topicLikeRepository, never()).existsByTopicIdAndUserId(any(), any());
             }
         }
 
@@ -1536,7 +1554,7 @@ class TopicServiceTest {
                         .hasFieldOrPropertyWithValue("errorCode",
                                 TopicErrorCode.TOPIC_NOT_IN_MEETING);
 
-                verify(topicLikeRepository, never()).existsByTopicId(any());
+                verify(topicLikeRepository, never()).existsByTopicIdAndUserId(any(), any());
             }
         }
 
@@ -1569,7 +1587,7 @@ class TopicServiceTest {
                         .hasFieldOrPropertyWithValue("errorCode",
                                 TopicErrorCode.TOPIC_ALREADY_DELETED);
 
-                verify(topicLikeRepository, never()).existsByTopicId(any());
+                verify(topicLikeRepository, never()).existsByTopicIdAndUserId(any(), any());
             }
         }
     }

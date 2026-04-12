@@ -6,6 +6,7 @@ import com.dokdok.meeting.entity.Meeting;
 import com.dokdok.meeting.entity.MeetingMember;
 import com.dokdok.meeting.entity.MeetingStatus;
 import com.dokdok.global.response.CursorResponse;
+import com.dokdok.meeting.repository.MeetingMemberRepository;
 import com.dokdok.meeting.service.MeetingValidator;
 import com.dokdok.topic.dto.request.ConfirmTopicsRequest;
 import com.dokdok.topic.dto.request.SuggestTopicRequest;
@@ -47,6 +48,7 @@ public class TopicService {
     private final TopicRepository topicRepository;
     private final TopicLikeRepository topicLikeRepository;
     private final TopicAnswerRepository topicAnswerRepository;
+    private final MeetingMemberRepository meetingMemberRepository;
     private final GatheringValidator gatheringValidator;
     private final MeetingValidator meetingValidator;
     private final TopicValidator topicValidator;
@@ -120,10 +122,11 @@ public class TopicService {
         gatheringValidator.validateGathering(gatheringId);
         meetingValidator.validateMeetingInGathering(meetingId, gatheringId);
 
+        boolean isMeetingMember = userId != null && meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId);
         boolean canConfirm = topicRepository.canConfirmTopic(meetingId, userId);
         boolean canSuggest = topicRepository.canSuggestTopic(meetingId, userId);
 
-        TopicsWithActionsResponse.Actions actions = TopicsWithActionsResponse.Actions.of(canConfirm, canSuggest);
+        TopicsWithActionsResponse.Actions actions = TopicsWithActionsResponse.Actions.of(canConfirm, canSuggest, isMeetingMember);
 
         // pageSize + 1개를 조회하여 다음 페이지 존재 여부 판단
         PageRequest pageable = PageRequest.of(0, pageSize + 1);
@@ -295,7 +298,7 @@ public class TopicService {
 
         Topic topic = topicValidator.getTopicInMeeting(topicId, meetingId);
 
-        boolean exists = topicLikeRepository.existsByTopicId(topicId);
+        boolean exists = topicLikeRepository.existsByTopicIdAndUserId(topicId, user.getId());
 
         TopicMessage message;
         int newCount;
