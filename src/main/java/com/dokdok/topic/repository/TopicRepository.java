@@ -151,7 +151,7 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
             @Param("userId") Long userId
     );
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("""
                 UPDATE Topic t
                 SET t.likeCount = t.likeCount + 1
