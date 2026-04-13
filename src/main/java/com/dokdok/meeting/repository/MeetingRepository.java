@@ -117,6 +117,22 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
             MeetingStatus meetingStatus
     );
 
+    // Scheduler용: 시작 시간이 지났고 임시저장 사전의견이 있는 CONFIRMED 상태의 Meeting 조회
+    @Query("""
+            SELECT DISTINCT m
+            FROM Meeting m
+            JOIN FETCH m.book b
+            JOIN Topic t ON t.meeting = m
+            JOIN TopicAnswer ta ON ta.topic = t
+            WHERE m.meetingStartDate <= :now
+            AND m.meetingStatus = :meetingStatus
+            AND ta.isSubmitted = false
+            """)
+    List<Meeting> findStartedMeetingsWithDraftPreOpinions(
+            @Param("now") LocalDateTime now,
+            @Param("meetingStatus") MeetingStatus meetingStatus
+    );
+
     Optional<Meeting> findTopByGatheringIdAndBookIdAndMeetingStatusOrderByMeetingStartDateDescIdDesc(
             Long gatheringId,
             Long bookId,

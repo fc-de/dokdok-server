@@ -3,6 +3,7 @@ package com.dokdok.meeting.scheduler;
 import com.dokdok.meeting.entity.Meeting;
 import com.dokdok.meeting.entity.MeetingStatus;
 import com.dokdok.meeting.repository.MeetingRepository;
+import com.dokdok.topic.service.PreOpinionAutoShareService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,6 +24,7 @@ import java.util.List;
 public class MeetingStatusScheduler {
 
     private final MeetingRepository meetingRepository;
+    private final PreOpinionAutoShareService preOpinionAutoShareService;
 
     /**
      * 종료 시간이 지난 모임의 상태를 자동으로 DONE으로 변경
@@ -31,6 +33,8 @@ public class MeetingStatusScheduler {
     @Scheduled(cron = "0 */10 * * * *")
     @Transactional
     public void updateExpiredMeetings() {
+        autoShareStartedMeetings();
+
         long startTime = System.currentTimeMillis();
         
         LocalDateTime now = LocalDateTime.now();
@@ -65,5 +69,36 @@ public class MeetingStatusScheduler {
         log.info("[Scheduler] Throughput: {} meetings/sec", 
                  duration > 0 ? (count * 1000.0 / duration) : count);
         log.info("[Scheduler] ========================================");
+    }
+
+    private void autoShareStartedMeetings() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Meeting> startedMeetings = meetingRepository
+                .findStartedMeetingsWithDraftPreOpinions(now, MeetingStatus.CONFIRMED);
+
+        if (startedMeetings.isEmpty()) {
+            log.info("[Scheduler] No started meetings for pre-opinion auto share.");
+            return;
+        }
+
+        int submittedAnswerCount = 0;
+        int submittedUserCount = 0;
+        int appliedReviewCount = 0;
+
+        for (Meeting meeting : startedMeetings) {
+            try {
+                PreOpinionAutoShareService.AutoShareResult result =
+                        preOpinionAutoShareService.autoShareDrafts(meeting);
+                submittedAnswerCount += result.submittedAnswerCount();
+                submittedUserCount += result.submittedUserCount();
+                appliedReviewCount += result.appliedReviewCount();
+            } catch (Exception e) {
+                log.error("[Scheduler] Failed to auto-share pre-opinions for meeting {}: {}",
+                        meeting.getId(), e.getMessage());
+            }
+        }
+
+        log.info("[Scheduler] Auto-shared pre-opinions for {} meetings: answers={}, users={}, reviews={}",
+                startedMeetings.size(), submittedAnswerCount, submittedUserCount, appliedReviewCount);
     }
 }

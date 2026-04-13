@@ -3,6 +3,7 @@ package com.dokdok.topic.service;
 import com.dokdok.book.dto.request.BookReviewRequest;
 import com.dokdok.book.dto.response.BookReviewResponse;
 import com.dokdok.book.entity.Book;
+import com.dokdok.book.entity.BookReview;
 import com.dokdok.book.exception.BookErrorCode;
 import com.dokdok.book.exception.BookException;
 import com.dokdok.book.repository.BookReviewRepository;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -91,6 +93,42 @@ public class PreOpinionBookReviewService {
         return exists
                 ? bookReviewService.updateMyReview(book.getId(), request)
                 : bookReviewService.createReview(book.getId(), request);
+    }
+
+    @Transactional
+    public int applyToPersonalBookReviews(Long meetingId, Set<Long> userIds) {
+        if (userIds.isEmpty()) {
+            return 0;
+        }
+
+        List<PreOpinionBookReview> reviews = preOpinionBookReviewRepository
+                .findByMeetingIdAndUserIdIn(meetingId, List.copyOf(userIds));
+
+        for (PreOpinionBookReview preOpinionReview : reviews) {
+            applyToPersonalBookReview(preOpinionReview);
+        }
+
+        return reviews.size();
+    }
+
+    private void applyToPersonalBookReview(PreOpinionBookReview preOpinionReview) {
+        List<Keyword> keywords = preOpinionReview.getKeywords().stream()
+                .map(PreOpinionBookReviewKeyword::getKeyword)
+                .toList();
+
+        bookReviewRepository.findByBookIdAndUserId(
+                        preOpinionReview.getBook().getId(),
+                        preOpinionReview.getUser().getId()
+                )
+                .ifPresentOrElse(
+                        existing -> existing.updateReview(preOpinionReview.getRating(), keywords),
+                        () -> bookReviewRepository.save(BookReview.create(
+                                preOpinionReview.getBook(),
+                                preOpinionReview.getUser(),
+                                preOpinionReview.getRating(),
+                                keywords
+                        ))
+                );
     }
 
     private BookReviewResponse toResponse(PreOpinionBookReview review) {
