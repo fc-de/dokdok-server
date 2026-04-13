@@ -39,6 +39,16 @@ public record BookReviewResponse(
         );
     }
 
+    public static BookReviewResponse of(
+            Long reviewId,
+            Long bookId,
+            Long userId,
+            BigDecimal rating,
+            List<KeywordInfo> keywords
+    ) {
+        return new BookReviewResponse(reviewId, bookId, userId, rating, keywords);
+    }
+
     @Schema(description = "리뷰 키워드 정보")
     public record KeywordInfo(
             @Schema(description = "키워드 ID", example = "3")
