@@ -1,10 +1,7 @@
 package com.dokdok.topic.service;
 
-import com.dokdok.book.entity.BookReview;
-import com.dokdok.book.entity.BookReviewKeyword;
+import com.dokdok.book.entity.Book;
 import com.dokdok.book.entity.KeywordType;
-import com.dokdok.book.repository.BookReviewKeywordRepository;
-import com.dokdok.book.repository.BookReviewRepository;
 import com.dokdok.gathering.entity.GatheringMember;
 import com.dokdok.gathering.entity.GatheringRole;
 import com.dokdok.gathering.repository.GatheringMemberRepository;
@@ -17,11 +14,14 @@ import com.dokdok.meeting.repository.MeetingMemberRepository;
 import com.dokdok.meeting.service.MeetingValidator;
 import com.dokdok.storage.service.StorageService;
 import com.dokdok.topic.dto.response.PreOpinionResponse;
+import com.dokdok.topic.entity.PreOpinionBookReview;
+import com.dokdok.topic.entity.PreOpinionBookReviewKeyword;
 import com.dokdok.topic.entity.Topic;
 import com.dokdok.topic.entity.TopicAnswer;
 import com.dokdok.topic.entity.TopicType;
 import com.dokdok.topic.exception.TopicErrorCode;
 import com.dokdok.topic.exception.TopicException;
+import com.dokdok.topic.repository.PreOpinionBookReviewRepository;
 import com.dokdok.topic.repository.TopicAnswerRepository;
 import com.dokdok.topic.repository.TopicRepository;
 import com.dokdok.user.entity.User;
@@ -44,7 +44,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -76,10 +75,10 @@ class PreOpinionServiceTest {
     private TopicAnswerRepository topicAnswerRepository;
 
     @Mock
-    private BookReviewRepository bookReviewRepository;
+    private PreOpinionBookReviewRepository preOpinionBookReviewRepository;
 
     @Mock
-    private BookReviewKeywordRepository bookReviewKeywordRepository;
+    private PreOpinionBookReviewService preOpinionBookReviewService;
 
     @Mock
     private StorageService storageService;
@@ -169,11 +168,13 @@ class PreOpinionServiceTest {
         return answer;
     }
 
-    private BookReview createBookReview(Long id, User user, BigDecimal rating) {
-        return BookReview.builder()
+    private PreOpinionBookReview createBookReview(Long id, User user, BigDecimal rating) {
+        return PreOpinionBookReview.builder()
                 .id(id)
+                .book(Book.builder().id(10L).build())
                 .user(user)
                 .rating(rating)
+                .keywords(new java.util.ArrayList<>())
                 .build();
     }
 
@@ -186,13 +187,15 @@ class PreOpinionServiceTest {
                 .build();
     }
 
-    private BookReviewKeyword createBookReviewKeyword(Long id, BookReview review, Keyword keyword) {
-        return BookReviewKeyword.builder()
+    private PreOpinionBookReviewKeyword createBookReviewKeyword(Long id, PreOpinionBookReview review, Keyword keyword) {
+        PreOpinionBookReviewKeyword reviewKeyword = PreOpinionBookReviewKeyword.builder()
                 .id(id)
-                .bookReview(review)
+                .preOpinionBookReview(review)
                 .keyword(keyword)
                 .createdAt(LocalDateTime.now())
                 .build();
+        review.getKeywords().add(reviewKeyword);
+        return reviewKeyword;
     }
 
     @Test
@@ -214,7 +217,7 @@ class PreOpinionServiceTest {
                 LocalDateTime.of(2025, 1, 1, 10, 0)
         );
 
-        BookReview review1 = createBookReview(300L, user1, new BigDecimal("4.5"));
+        PreOpinionBookReview review1 = createBookReview(300L, user1, new BigDecimal("4.5"));
 
         GatheringMember gm1 = createGatheringMember(1L, user1, GatheringRole.LEADER);
         GatheringMember gm2 = createGatheringMember(2L, user2, GatheringRole.MEMBER);
@@ -222,8 +225,7 @@ class PreOpinionServiceTest {
         given(topicRepository.findConfirmedTopics(MEETING_ID)).willReturn(List.of(topic));
         given(meetingMemberRepository.findAllByMeetingIdOrderByTopicAnswerDate(MEETING_ID)).willReturn(List.of(mm1, mm2));
         given(gatheringMemberRepository.findAllMembersByGatheringId(GATHERING_ID)).willReturn(List.of(gm1, gm2));
-        given(bookReviewRepository.findByUserIdIn(anyList(), anyLong())).willReturn(List.of(review1));
-        given(bookReviewKeywordRepository.findByBookReviewIds(anyList())).willReturn(List.of());
+        given(preOpinionBookReviewRepository.findByMeetingIdAndUserIdIn(anyLong(), anyList())).willReturn(List.of(review1));
         given(topicAnswerRepository.findByMeetingId(MEETING_ID)).willReturn(List.of(answer1));
         given(storageService.getPresignedProfileImage(anyString())).willReturn(PRESIGNED_URL);
 
@@ -292,8 +294,7 @@ class PreOpinionServiceTest {
         given(meetingMemberRepository.findAllByMeetingIdOrderByTopicAnswerDate(MEETING_ID))
                 .willReturn(List.of(mm1, mm3, mm2));
         given(gatheringMemberRepository.findAllMembersByGatheringId(GATHERING_ID)).willReturn(List.of(gm1, gm2, gm3));
-        given(bookReviewRepository.findByUserIdIn(anyList(), anyLong())).willReturn(List.of());
-        given(bookReviewKeywordRepository.findByBookReviewIds(anyList())).willReturn(List.of());
+        given(preOpinionBookReviewRepository.findByMeetingIdAndUserIdIn(anyLong(), anyList())).willReturn(List.of());
         given(topicAnswerRepository.findByMeetingId(MEETING_ID)).willReturn(List.of(answer1, answer3));
         given(storageService.getPresignedProfileImage(anyString())).willReturn(PRESIGNED_URL);
 
@@ -324,8 +325,7 @@ class PreOpinionServiceTest {
         given(topicRepository.findConfirmedTopics(MEETING_ID)).willReturn(List.of(topic));
         given(meetingMemberRepository.findAllByMeetingIdOrderByTopicAnswerDate(MEETING_ID)).willReturn(List.of(mm1));
         given(gatheringMemberRepository.findAllMembersByGatheringId(GATHERING_ID)).willReturn(List.of(gm1));
-        given(bookReviewRepository.findByUserIdIn(anyList(), anyLong())).willReturn(List.of());
-        given(bookReviewKeywordRepository.findByBookReviewIds(anyList())).willReturn(List.of());
+        given(preOpinionBookReviewRepository.findByMeetingIdAndUserIdIn(anyLong(), anyList())).willReturn(List.of());
         given(topicAnswerRepository.findByMeetingId(MEETING_ID)).willReturn(List.of());
         given(storageService.getPresignedProfileImage(anyString())).willReturn(PRESIGNED_URL);
 
@@ -354,8 +354,7 @@ class PreOpinionServiceTest {
         given(topicRepository.findConfirmedTopics(MEETING_ID)).willReturn(List.of(topic));
         given(meetingMemberRepository.findAllByMeetingIdOrderByTopicAnswerDate(MEETING_ID)).willReturn(List.of(mm1));
         given(gatheringMemberRepository.findAllMembersByGatheringId(GATHERING_ID)).willReturn(List.of(gm1));
-        given(bookReviewRepository.findByUserIdIn(anyList(), anyLong())).willReturn(List.of());
-        given(bookReviewKeywordRepository.findByBookReviewIds(anyList())).willReturn(List.of());
+        given(preOpinionBookReviewRepository.findByMeetingIdAndUserIdIn(anyLong(), anyList())).willReturn(List.of());
         given(topicAnswerRepository.findByMeetingId(MEETING_ID)).willReturn(List.of());
         given(storageService.getPresignedProfileImage(anyString())).willReturn(PRESIGNED_URL);
 
@@ -384,8 +383,7 @@ class PreOpinionServiceTest {
         given(topicRepository.findConfirmedTopics(MEETING_ID)).willReturn(List.of(topic));
         given(meetingMemberRepository.findAllByMeetingIdOrderByTopicAnswerDate(MEETING_ID)).willReturn(List.of(mm1));
         given(gatheringMemberRepository.findAllMembersByGatheringId(GATHERING_ID)).willReturn(List.of(gm1));
-        given(bookReviewRepository.findByUserIdIn(anyList(), anyLong())).willReturn(List.of());
-        given(bookReviewKeywordRepository.findByBookReviewIds(anyList())).willReturn(List.of());
+        given(preOpinionBookReviewRepository.findByMeetingIdAndUserIdIn(anyLong(), anyList())).willReturn(List.of());
         given(topicAnswerRepository.findByMeetingId(MEETING_ID)).willReturn(List.of());
         given(storageService.getPresignedProfileImage(anyString())).willReturn(PRESIGNED_URL);
 
@@ -414,21 +412,20 @@ class PreOpinionServiceTest {
                 LocalDateTime.of(2025, 1, 1, 10, 0)
         );
 
-        BookReview review1 = createBookReview(300L, user1, new BigDecimal("4.0"));
+        PreOpinionBookReview review1 = createBookReview(300L, user1, new BigDecimal("4.0"));
 
         Keyword keyword1 = createKeyword(10L, "판타지", KeywordType.BOOK);
         Keyword keyword2 = createKeyword(20L, "감동적인", KeywordType.IMPRESSION);
 
-        BookReviewKeyword brk1 = createBookReviewKeyword(1L, review1, keyword1);
-        BookReviewKeyword brk2 = createBookReviewKeyword(2L, review1, keyword2);
+        createBookReviewKeyword(1L, review1, keyword1);
+        createBookReviewKeyword(2L, review1, keyword2);
 
         GatheringMember gm1 = createGatheringMember(1L, user1, GatheringRole.MEMBER);
 
         given(topicRepository.findConfirmedTopics(MEETING_ID)).willReturn(List.of(topic));
         given(meetingMemberRepository.findAllByMeetingIdOrderByTopicAnswerDate(MEETING_ID)).willReturn(List.of(mm1));
         given(gatheringMemberRepository.findAllMembersByGatheringId(GATHERING_ID)).willReturn(List.of(gm1));
-        given(bookReviewRepository.findByUserIdIn(anyList(), anyLong())).willReturn(List.of(review1));
-        given(bookReviewKeywordRepository.findByBookReviewIds(List.of(300L))).willReturn(List.of(brk1, brk2));
+        given(preOpinionBookReviewRepository.findByMeetingIdAndUserIdIn(anyLong(), anyList())).willReturn(List.of(review1));
         given(topicAnswerRepository.findByMeetingId(MEETING_ID)).willReturn(List.of(answer1));
         given(storageService.getPresignedProfileImage(anyString())).willReturn(PRESIGNED_URL);
 
