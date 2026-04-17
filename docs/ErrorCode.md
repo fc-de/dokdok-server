@@ -130,6 +130,10 @@
 | M017 | MEETING_UPDATE_NOT_ALLOWED | 약속 시작 24시간 이내에는 수정할 수 없습니다. | 400 |
 | M018 | MEETING_NOT_CONFIRMED | 약속이 확정된 경우에만 주제를 제안할 수 있습니다. | 400 |
 | M019 | MEETING_DATE_REQUIRED | 약속 시작/종료 일시는 필수입니다. | 400 |
+| M020 | MEETING_JOIN_REQUIRES_CONFIRMED | 확정된 약속만 참가 신청할 수 있습니다. | 400 |
+| M021 | MEETING_JOIN_TIME_CONFLICT | 동일 시간대의 다른 약속에 이미 참가 중입니다. | 400 |
+| M022 | MEETING_CREATE_NOT_ALLOWED | 약속 시작 24시간 이내의 일정은 신청할 수 없습니다. | 400 |
+| M023 | MEETING_CONFIRM_NOT_ALLOWED | 약속 시작 24시간 이내의 일정은 승인할 수 없습니다. | 400 |
 
 ---
 
