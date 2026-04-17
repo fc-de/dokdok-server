@@ -235,6 +235,7 @@ public class MeetingService {
         // 모임장만 거절 가능
         gatheringValidator.validateLeader(meeting.getGathering().getId(), userId);
 
+        validateRejectable(meeting);
         meeting.changeStatus(MeetingStatus.REJECTED);
 
         return MeetingStatusResponse.from(meeting);
@@ -285,6 +286,18 @@ public class MeetingService {
     }
 
     /**
+     * 신청된 약속만 거절 가능하다.
+     */
+    private void validateRejectable(Meeting meeting) {
+        if (meeting.getMeetingStatus() != MeetingStatus.PENDING) {
+            throw new MeetingException(
+                    MeetingErrorCode.INVALID_MEETING_STATUS_CHANGE,
+                    "신청된 약속만 거절할 수 있습니다."
+            );
+        }
+    }
+
+    /**
      * 약속장을 미팅 멤버로 포함하고 역할을 LEADER로 설정한다.
      */
     private void ensureLeaderMember(Meeting meeting) {
@@ -317,7 +330,9 @@ public class MeetingService {
 
         Meeting meeting = meetingValidator.findMeetingOrThrow(meetingId);
 
+        validateJoinableStatus(meeting);
         validateJoinableMeetingStartDate(meeting);
+        validateNoOverlappingJoinedMeeting(meeting, userId);
 
         gatheringValidator.validateMembership(meeting.getGathering().getId(), userId);
 
@@ -545,6 +560,36 @@ public class MeetingService {
         if (meetingStartDate != null
                 && meetingStartDate.isBefore(LocalDateTime.now().plusHours(24))) {
             throw new MeetingException(MeetingErrorCode.MEETING_JOIN_NOT_ALLOWED);
+        }
+    }
+
+    /**
+     * 확정된 약속만 참가 신청 가능
+     */
+    private void validateJoinableStatus(Meeting meeting) {
+        if (meeting.getMeetingStatus() != MeetingStatus.CONFIRMED) {
+            throw new MeetingException(MeetingErrorCode.MEETING_JOIN_REQUIRES_CONFIRMED);
+        }
+    }
+
+    /**
+     * 동일 시간대의 다른 확정 약속에 이미 참가 중이면 참가 신청 불가
+     */
+    private void validateNoOverlappingJoinedMeeting(Meeting meeting, Long userId) {
+        LocalDateTime meetingStartDate = meeting.getMeetingStartDate();
+        LocalDateTime meetingEndDate = meeting.getMeetingEndDate();
+
+        validateMeetingDatesRequired(meetingStartDate, meetingEndDate);
+
+        boolean hasOverlappingMeeting = meetingMemberRepository.existsOverlappingConfirmedMeetingByUserId(
+                userId,
+                meeting.getId(),
+                MeetingStatus.CONFIRMED,
+                meetingStartDate,
+                meetingEndDate
+        );
+        if (hasOverlappingMeeting) {
+            throw new MeetingException(MeetingErrorCode.MEETING_JOIN_TIME_CONFLICT);
         }
     }
 
