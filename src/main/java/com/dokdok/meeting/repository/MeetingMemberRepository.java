@@ -83,6 +83,25 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
             @Param("userId") Long userId
     );
 
+    @Query("""
+            SELECT COUNT(mm) > 0
+            FROM MeetingMember mm
+            JOIN mm.meeting m
+            WHERE mm.user.id = :userId
+            AND mm.canceledAt IS NULL
+            AND m.id <> :meetingId
+            AND m.meetingStatus = :meetingStatus
+            AND m.meetingStartDate < :endDate
+            AND m.meetingEndDate > :startDate
+            """)
+    boolean existsOverlappingConfirmedMeetingByUserId(
+            @Param("userId") Long userId,
+            @Param("meetingId") Long meetingId,
+            @Param("meetingStatus") MeetingStatus meetingStatus,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
     boolean existsByMeetingIdAndUserId(Long meetingId, Long userId);
 
     @Query("""
