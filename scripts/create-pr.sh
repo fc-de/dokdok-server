@@ -34,6 +34,24 @@ print_warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
+extract_repo_full_name() {
+    local remote_url="$1"
+
+    remote_url="${remote_url%.git}"
+
+    if [[ "$remote_url" =~ ^git@github\.com:(.+/[^/]+)$ ]]; then
+        echo "${BASH_REMATCH[1]}"
+        return 0
+    fi
+
+    if [[ "$remote_url" =~ ^https://github\.com/(.+/[^/]+)$ ]]; then
+        echo "${BASH_REMATCH[1]}"
+        return 0
+    fi
+
+    return 1
+}
+
 # ============================================
 # 인자 파싱
 # ============================================
@@ -85,6 +103,16 @@ print_info "현재 브랜치: ${CURRENT_BRANCH}"
 # remote fetch
 print_info "Remote 정보를 업데이트 중..."
 git fetch origin --quiet
+
+ORIGIN_URL=$(git remote get-url origin 2>/dev/null || echo "")
+REPO_FULL_NAME=$(extract_repo_full_name "$ORIGIN_URL" || true)
+
+if [ -z "$REPO_FULL_NAME" ]; then
+    print_error "origin remote에서 GitHub 저장소 정보를 파싱할 수 없습니다: ${ORIGIN_URL}"
+    exit 1
+fi
+
+print_info "대상 저장소: ${REPO_FULL_NAME}"
 
 # base 브랜치 존재 확인
 if ! git show-ref --verify --quiet refs/remotes/origin/${BASE_BRANCH}; then
@@ -447,6 +475,7 @@ if command -v gh &> /dev/null; then
 
     # PR 생성
     if gh pr create \
+        --repo "$REPO_FULL_NAME" \
         --base "$BASE_BRANCH" \
         --head "$CURRENT_BRANCH" \
         --title "$PR_TITLE" \
@@ -460,6 +489,6 @@ else
     print_warning "gh CLI가 설치되어 있지 않습니다."
     print_info "다음 명령어로 수동으로 PR을 생성할 수 있습니다:"
     echo ""
-    echo "gh pr create --base $BASE_BRANCH --head $CURRENT_BRANCH --title \"$PR_TITLE\" --body-file scripts/PR_BODY.md"
+    echo "gh pr create --repo $REPO_FULL_NAME --base $BASE_BRANCH --head $CURRENT_BRANCH --title \"$PR_TITLE\" --body-file scripts/PR_BODY.md"
     echo ""
 fi
