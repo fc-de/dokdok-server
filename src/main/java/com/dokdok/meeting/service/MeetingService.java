@@ -187,6 +187,7 @@ public class MeetingService {
         }
 
         validateMeetingDatesRequired(request.meetingStartDate(), request.meetingEndDate());
+        validateCreatableMeetingStartDate(request.meetingStartDate());
 
         // 최대 참가 인원 검증
         validateMaxParticipants(maxParticipants, gathering.getId());
@@ -271,6 +272,9 @@ public class MeetingService {
         if (startDate == null || endDate == null) {
             throw new MeetingException(MeetingErrorCode.MEETING_DATE_REQUIRED,
                     "약속 시작/종료 일시는 필수입니다.");
+        }
+        if (startDate.isBefore(LocalDateTime.now().plusHours(24))) {
+            throw new MeetingException(MeetingErrorCode.MEETING_CONFIRM_NOT_ALLOWED);
         }
         boolean hasOverlappingMeeting = meetingRepository.existsOverlappingMeeting(
                 gatheringId,
@@ -618,6 +622,15 @@ public class MeetingService {
                     MeetingErrorCode.MEETING_DATE_REQUIRED,
                     "약속 시작/종료 일시는 필수입니다."
             );
+        }
+    }
+
+    /**
+     * 약속 시작 24시간 이내 일정은 신청 불가
+     */
+    private void validateCreatableMeetingStartDate(LocalDateTime startDate) {
+        if (startDate != null && startDate.isBefore(LocalDateTime.now().plusHours(24))) {
+            throw new MeetingException(MeetingErrorCode.MEETING_CREATE_NOT_ALLOWED);
         }
     }
 
