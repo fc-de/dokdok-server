@@ -166,9 +166,9 @@ public class PersonalBookService {
     }
 
     public PersonalBookDetailResponse getPersonalBook(Long bookId) {
-        User userEntity = userValidator.findUserOrThrow(SecurityUtil.getCurrentUserId());
-        // 책 정보 GET Logic
-        PersonalBook entity = bookValidator.validateInBookShelf(userEntity.getId(), bookId);
+        Long userId = SecurityUtil.getCurrentUserId();
+        PersonalBook entity = personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId)
+                .orElseThrow(() -> new BookException(BookErrorCode.BOOK_NOT_IN_SHELF));
 
         return PersonalBookDetailResponse.from(entity);
     }

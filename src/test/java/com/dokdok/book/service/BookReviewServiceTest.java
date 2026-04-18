@@ -414,6 +414,38 @@ class BookReviewServiceTest {
     }
 
     @Test
+    @DisplayName("기존 리뷰의 별점이 null이어도 수정 시 NPE가 발생하지 않는다")
+    void updateMyReview_withNullExistingRating_updatesSuccessfully() {
+        Book book = Book.builder().id(1L).build();
+        Keyword keyword = Keyword.builder().id(2L).keywordName("감동").keywordType(KeywordType.BOOK).build();
+        Keyword newKeyword = Keyword.builder().id(5L).keywordName("희망").keywordType(KeywordType.BOOK).build();
+        User user = User.builder().id(3L).build();
+        // null rating으로 생성된 기존 리뷰
+        BookReview review = BookReview.builder()
+                .id(10L)
+                .book(book)
+                .user(user)
+                .rating(null)
+                .keywords(new ArrayList<>(List.of(
+                        BookReviewKeyword.builder().keyword(keyword).build()
+                )))
+                .build();
+        BookReviewRequest request = new BookReviewRequest(new BigDecimal("4.0"), List.of(5L));
+
+        try (MockedStatic<SecurityUtil> securityUtilMock = org.mockito.Mockito.mockStatic(SecurityUtil.class)) {
+            securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(3L);
+
+            when(bookValidator.validateAndGetReviewForUpdate(1L, 3L)).thenReturn(review);
+            when(keywordValidator.validateAndGetSelectableKeyword(5L)).thenReturn(newKeyword);
+
+            BookReviewResponse response = bookReviewService.updateMyReview(1L, request);
+
+            assertThat(review.getRating()).isEqualTo(new BigDecimal("4.0"));
+            assertThat(response.reviewId()).isEqualTo(10L);
+        }
+    }
+
+    @Test
     @DisplayName("별점이 유효하지 않으면 수정 시 예외가 발생한다")
     void updateMyReview_throwsWhenInvalidRating() {
         BookReviewRequest request = new BookReviewRequest(new BigDecimal("0.3"), List.of(2L));

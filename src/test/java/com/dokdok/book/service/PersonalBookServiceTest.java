@@ -436,8 +436,8 @@ class PersonalBookServiceTest {
                 .build();
 
         securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
-        when(userValidator.findUserOrThrow(userId)).thenReturn(user);
-        when(bookValidator.validateInBookShelf(userId, bookId)).thenReturn(personalBook);
+        when(personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId))
+                .thenReturn(Optional.of(personalBook));
 
         // when
         PersonalBookDetailResponse response = personalBookService.getPersonalBook(bookId);
@@ -450,8 +450,45 @@ class PersonalBookServiceTest {
         assertThat(response.bookReadingStatus()).isEqualTo(BookReadingStatus.COMPLETED);
 
         securityUtilMock.verify(SecurityUtil::getCurrentUserId, times(1));
-        verify(userValidator, times(1)).findUserOrThrow(userId);
-        verify(bookValidator, times(1)).validateInBookShelf(userId, bookId);
+        verify(personalBookRepository, times(1)).findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId);
+    }
+
+    @Test
+    @DisplayName("모임을 통해 추가된 책도 단일 조회가 가능하다")
+    void getPersonalBookDetail_GatheringBook_Success() {
+        // given
+        Long userId = 1L;
+        Long bookId = 10L;
+
+        User user = User.builder().id(userId).kakaoId(12345L).nickname("tester").build();
+        Book book = Book.builder()
+                .id(bookId)
+                .bookName("모임 책")
+                .publisher("출판사")
+                .author("저자")
+                .build();
+
+        // gathering_id가 설정된 PersonalBook (모임을 통해 추가된 책)
+        PersonalBook gatheringPersonalBook = PersonalBook.builder()
+                .id(200L)
+                .user(user)
+                .book(book)
+                .readingStatus(BookReadingStatus.READING)
+                .build();
+
+        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
+        when(personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId))
+                .thenReturn(Optional.of(gatheringPersonalBook));
+
+        // when
+        PersonalBookDetailResponse response = personalBookService.getPersonalBook(bookId);
+
+        // then
+        assertThat(response.personalBookId()).isEqualTo(200L);
+        assertThat(response.title()).isEqualTo("모임 책");
+        assertThat(response.bookReadingStatus()).isEqualTo(BookReadingStatus.READING);
+
+        verify(personalBookRepository, times(1)).findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId);
     }
 
     @Test
@@ -461,16 +498,9 @@ class PersonalBookServiceTest {
         Long userId = 1L;
         Long bookId = 10L;
 
-        User user = User.builder()
-                .id(userId)
-                .kakaoId(12345L)
-                .nickname("tester")
-                .build();
-
         securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
-        when(userValidator.findUserOrThrow(userId)).thenReturn(user);
-        when(bookValidator.validateInBookShelf(userId, bookId))
-                .thenThrow(new BookException(BookErrorCode.BOOK_NOT_IN_SHELF));
+        when(personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId))
+                .thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> personalBookService.getPersonalBook(bookId))
@@ -478,8 +508,7 @@ class PersonalBookServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", BookErrorCode.BOOK_NOT_IN_SHELF);
 
         securityUtilMock.verify(SecurityUtil::getCurrentUserId, times(1));
-        verify(userValidator, times(1)).findUserOrThrow(userId);
-        verify(bookValidator, times(1)).validateInBookShelf(userId, bookId);
+        verify(personalBookRepository, times(1)).findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId);
     }
 
     @Test
