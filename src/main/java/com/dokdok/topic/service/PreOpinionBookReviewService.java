@@ -146,7 +146,8 @@ public class PreOpinionBookReviewService {
                 review.getBook().getId(),
                 review.getUser().getId(),
                 review.getRating(),
-                keywordInfos
+                keywordInfos,
+                review.getCreatedAt()
         );
     }
 }

@@ -100,7 +100,7 @@ class TopicAnswerServiceTest {
                 .willReturn(List.of());
         given(topicAnswerRepository.save(any(TopicAnswer.class)))
                 .willReturn(saved);
-        BookReviewResponse reviewResponse = new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of());
+        BookReviewResponse reviewResponse = new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of(), null);
         given(preOpinionBookReviewService.upsertReview(eq(1L), any(BookReviewRequest.class)))
                 .willReturn(reviewResponse);
 
@@ -177,7 +177,7 @@ class TopicAnswerServiceTest {
         given(topicAnswerRepository.findByMeetingIdUserId(1L, 1L))
                 .willReturn(List.of(answer));
         given(preOpinionBookReviewService.upsertReview(eq(1L), any(BookReviewRequest.class)))
-                .willReturn(new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of()));
+                .willReturn(new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of(), null));
 
         TopicAnswerBulkSaveRequest request = new TopicAnswerBulkSaveRequest(
                 new BookReviewRequest(BigDecimal.valueOf(4.5), List.of(1L)),
@@ -213,7 +213,7 @@ class TopicAnswerServiceTest {
         given(topicAnswerRepository.findByMeetingIdUserId(1L, 1L))
                 .willReturn(List.of(answer));
         given(preOpinionBookReviewService.upsertReview(eq(1L), any(BookReviewRequest.class)))
-                .willReturn(new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of()));
+                .willReturn(new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of(), null));
 
         TopicAnswerBulkSaveRequest request = new TopicAnswerBulkSaveRequest(
                 new BookReviewRequest(BigDecimal.valueOf(4.5), List.of(1L)),
@@ -243,7 +243,7 @@ class TopicAnswerServiceTest {
         given(topicAnswerRepository.findByMeetingIdUserId(1L, 1L))
                 .willReturn(List.of(answer));
         given(preOpinionBookReviewService.upsertReview(eq(1L), any(BookReviewRequest.class)))
-                .willReturn(new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of()));
+                .willReturn(new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of(), null));
 
         TopicAnswerBulkSubmitRequest request = new TopicAnswerBulkSubmitRequest(
                 new BookReviewRequest(BigDecimal.valueOf(4.5), List.of(1L)),
