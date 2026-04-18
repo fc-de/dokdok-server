@@ -766,6 +766,11 @@ class PersonalBookServiceTest {
     ) {
         return new PersonalBookListProjection() {
             @Override
+            public Long getPersonalBookId() {
+                return null;
+            }
+
+            @Override
             public Long getBookId() {
                 return bookId;
             }
