@@ -287,6 +287,11 @@ class PersonalBookServiceTest {
 
         PersonalBookListProjection projection = new PersonalBookListProjection() {
             @Override
+            public Long getPersonalBookId() {
+                return 20L;
+            }
+
+            @Override
             public Long getBookId() {
                 return book.getId();
             }
@@ -760,6 +765,11 @@ class PersonalBookServiceTest {
             LocalDateTime addedAt
     ) {
         return new PersonalBookListProjection() {
+            @Override
+            public Long getPersonalBookId() {
+                return null;
+            }
+
             @Override
             public Long getBookId() {
                 return bookId;

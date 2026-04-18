@@ -20,6 +20,7 @@ public interface PersonalBookRepository extends JpaRepository<PersonalBook, Long
     @Query(
             value = """
                 select
+                    (array_agg(pb.personal_book_id order by pb.added_at desc, pb.personal_book_id desc))[1] as personalBookId,
                     b.book_id as bookId,
                     b.book_name as title,
                     b.publisher as publisher,
@@ -71,6 +72,7 @@ public interface PersonalBookRepository extends JpaRepository<PersonalBook, Long
     @Query(
             value = """
                 select
+                    (array_agg(pb.personal_book_id order by pb.added_at desc, pb.personal_book_id desc))[1] as personalBookId,
                     b.book_id as bookId,
                     b.book_name as title,
                     b.publisher as publisher,

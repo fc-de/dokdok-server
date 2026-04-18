@@ -12,6 +12,7 @@ import java.util.List;
 
 @Builder
 public record PersonalBookListResponse(
+        Long personalBookId,
         Long bookId,
         String title,
         String publisher,
@@ -25,6 +26,7 @@ public record PersonalBookListResponse(
 
     public static PersonalBookListResponse from(PersonalBook entity) {
         return PersonalBookListResponse.builder()
+                .personalBookId(entity.getId())
                 .bookId(entity.getBook().getId())
                 .title(entity.getBook().getBookName())
                 .publisher(entity.getBook().getPublisher())
@@ -43,6 +45,7 @@ public record PersonalBookListResponse(
 
     public static PersonalBookListResponse from(PersonalBookListProjection projection) {
         return PersonalBookListResponse.builder()
+                .personalBookId(projection.getPersonalBookId())
                 .bookId(projection.getBookId())
                 .title(projection.getTitle())
                 .publisher(projection.getPublisher())

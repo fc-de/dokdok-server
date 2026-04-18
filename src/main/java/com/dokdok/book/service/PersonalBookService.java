@@ -325,12 +325,18 @@ public class PersonalBookService {
     }
 
     private record CursorProjection(
+            Long personalBookId,
             Long bookId,
             LocalDateTime addedAt,
             BigDecimal rating
     ) implements PersonalBookListProjection {
         private static CursorProjection of(Long bookId, LocalDateTime addedAt, BigDecimal rating) {
-            return new CursorProjection(bookId, addedAt, rating);
+            return new CursorProjection(null, bookId, addedAt, rating);
+        }
+
+        @Override
+        public Long getPersonalBookId() {
+            return personalBookId;
         }
 
         @Override
