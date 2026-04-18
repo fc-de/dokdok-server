@@ -7,7 +7,6 @@ import com.dokdok.book.entity.BookReview;
 import com.dokdok.book.exception.BookErrorCode;
 import com.dokdok.book.exception.BookException;
 import com.dokdok.book.repository.BookReviewRepository;
-import com.dokdok.book.service.BookReviewService;
 import com.dokdok.book.service.BookValidator;
 import com.dokdok.global.util.SecurityUtil;
 import com.dokdok.keyword.entity.Keyword;
@@ -32,7 +31,6 @@ public class PreOpinionBookReviewService {
 
     private final PreOpinionBookReviewRepository preOpinionBookReviewRepository;
     private final BookReviewRepository bookReviewRepository;
-    private final BookReviewService bookReviewService;
     private final MeetingValidator meetingValidator;
     private final BookValidator bookValidator;
     private final KeywordValidator keywordValidator;
@@ -89,10 +87,28 @@ public class PreOpinionBookReviewService {
             throw new BookException(BookErrorCode.BOOK_NOT_FOUND);
         }
 
-        boolean exists = bookReviewRepository.findByBookIdAndUserId(book.getId(), userId).isPresent();
-        return exists
-                ? bookReviewService.updateMyReview(book.getId(), request)
-                : bookReviewService.createReview(book.getId(), request);
+        List<Keyword> keywords = request.keywordIds().stream()
+                .map(keywordValidator::validateAndGetSelectableKeyword)
+                .collect(Collectors.toList());
+
+        return bookReviewRepository.findByBookIdAndUserId(book.getId(), userId)
+                .map(existing -> {
+                    try {
+                        existing.updateReview(request.rating(), keywords);
+                    } catch (BookException e) {
+                        if (e.getErrorCode() != BookErrorCode.BOOK_REVIEW_NO_CHANGES) {
+                            throw e;
+                        }
+                        // 변경사항 없으면 기존 리뷰 그대로 반환
+                    }
+                    return BookReviewResponse.from(existing);
+                })
+                .orElseGet(() -> {
+                    BookReview newReview = bookReviewRepository.save(
+                            BookReview.create(book, SecurityUtil.getCurrentUserEntity(), request.rating(), keywords)
+                    );
+                    return BookReviewResponse.from(newReview);
+                });
     }
 
     @Transactional
@@ -121,7 +137,16 @@ public class PreOpinionBookReviewService {
                         preOpinionReview.getUser().getId()
                 )
                 .ifPresentOrElse(
-                        existing -> existing.updateReview(preOpinionReview.getRating(), keywords),
+                        existing -> {
+                            try {
+                                existing.updateReview(preOpinionReview.getRating(), keywords);
+                            } catch (BookException e) {
+                                if (e.getErrorCode() != BookErrorCode.BOOK_REVIEW_NO_CHANGES) {
+                                    throw e;
+                                }
+                                // 변경사항 없으면 무시
+                            }
+                        },
                         () -> bookReviewRepository.save(BookReview.create(
                                 preOpinionReview.getBook(),
                                 preOpinionReview.getUser(),
