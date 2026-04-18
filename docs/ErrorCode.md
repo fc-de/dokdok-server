@@ -1,3 +1,4 @@
+
 # DokDok API 에러코드 문서
 
 ## Global 에러코드
