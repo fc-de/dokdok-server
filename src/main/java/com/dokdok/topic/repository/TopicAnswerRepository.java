@@ -35,6 +35,16 @@ public interface TopicAnswerRepository extends JpaRepository<TopicAnswer, Long> 
     boolean existsByMeetingIdAndUserId(@Param("meetingId") Long meetingId,
                                        @Param("userId") Long userId);
 
+    @Query("""
+            SELECT DISTINCT t.meeting.id
+            FROM TopicAnswer ta
+            JOIN ta.topic t
+            WHERE t.meeting.id IN :meetingIds
+            AND ta.user.id = :userId
+            AND ta.isSubmitted = true
+            """)
+    List<Long> findMeetingIdsWithSubmittedAnswers(@Param("meetingIds") List<Long> meetingIds,
+                                                  @Param("userId") Long userId);
 
     @Query("""
                     SELECT ta
