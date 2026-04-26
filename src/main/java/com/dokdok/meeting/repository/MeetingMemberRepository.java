@@ -134,6 +134,18 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
             JOIN mm.meeting m
             WHERE mm.user.id = :userId
             AND mm.canceledAt IS NULL
+            AND m.gathering.id = :gatheringId
+            """)
+    int countMeetingsByUserIdAndGatheringId(
+            @Param("userId") Long userId,
+            @Param("gatheringId") Long gatheringId
+    );
+
+    @Query("""
+            SELECT count(mm) FROM MeetingMember mm
+            JOIN mm.meeting m
+            WHERE mm.user.id = :userId
+            AND mm.canceledAt IS NULL
             AND m.meetingStatus IN :meetingStatuses
             """)
     int countMyMeetingsByStatuses(

@@ -1503,9 +1503,9 @@ class MeetingServiceTest {
 
         List<Meeting> meetings = List.of(meeting1, meeting2);
         Page<Meeting> meetingPage = new PageImpl<>(meetings, pageable, meetings.size());
-        given(meetingRepository.findByGatheringIdAndMeetingStatus(
+        given(meetingRepository.findByGatheringIdAndMeetingStatusIn(
                 eq(gatheringId),
-                eq(MeetingStatus.CONFIRMED),
+                eq(List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE)),
                 any()
         )).willReturn(meetingPage);
         given(topicRepository.findTopicTypesByMeetingIds(List.of(1L, 2L)))
@@ -1516,6 +1516,10 @@ class MeetingServiceTest {
                 ));
         given(meetingMemberRepository.findActiveMeetingIdsByUserIdAndGatheringId(userId, gatheringId))
                 .willReturn(List.of(1L));
+        given(topicAnswerRepository.findMeetingIdsWithSubmittedAnswers(List.of(1L, 2L), userId))
+                .willReturn(List.of());
+        given(personalRetrospectiveRepository.findMeetingIdsWithRetrospective(List.of(1L, 2L), userId))
+                .willReturn(List.of());
 
         try (MockedStatic<SecurityUtil> mock = mockStatic(SecurityUtil.class)) {
             mock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
@@ -1653,14 +1657,15 @@ class MeetingServiceTest {
         // given
         Long gatheringId = 100L;
         Long userId = 55L;
-        given(meetingRepository.countByGatheringIdAndMeetingStatus(gatheringId, MeetingStatus.CONFIRMED))
-                .willReturn(3);
+        given(meetingRepository.countByGatheringIdAndMeetingStatusIn(
+                gatheringId, List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE)))
+                .willReturn(5);
         given(meetingRepository.countByGatheringIdAndMeetingStatus(gatheringId, MeetingStatus.DONE))
                 .willReturn(2);
-        given(meetingRepository.countUpcomingMeetings(eq(gatheringId), eq(MeetingStatus.CONFIRMED), any(), any()))
-                .willReturn(1);
-        given(meetingMemberRepository.countMeetingsByUserIdAndStatus(userId, gatheringId, MeetingStatus.DONE))
-                .willReturn(1);
+        given(meetingRepository.countByGatheringIdAndMeetingStatus(gatheringId, MeetingStatus.CONFIRMED))
+                .willReturn(3);
+        given(meetingMemberRepository.countMeetingsByUserIdAndGatheringId(userId, gatheringId))
+                .willReturn(4);
 
         try (MockedStatic<SecurityUtil> mock = mockStatic(SecurityUtil.class)) {
             mock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
@@ -1669,16 +1674,10 @@ class MeetingServiceTest {
             MeetingTabCountsResponse response = meetingService.getMeetingTabCounts(gatheringId);
 
             // then
-            assertThat(response.all()).isEqualTo(3);
-            assertThat(response.upcoming()).isEqualTo(1);
+            assertThat(response.all()).isEqualTo(5);
+            assertThat(response.upcoming()).isEqualTo(3);
             assertThat(response.done()).isEqualTo(2);
-            assertThat(response.joined()).isEqualTo(1);
-            verify(meetingRepository).countUpcomingMeetings(
-                    eq(gatheringId),
-                    eq(MeetingStatus.CONFIRMED),
-                    any(LocalDateTime.class),
-                    any(LocalDateTime.class)
-            );
+            assertThat(response.joined()).isEqualTo(4);
         }
     }
 

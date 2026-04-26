@@ -40,10 +40,19 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 
     int countByGatheringIdAndMeetingStatus(Long gatheringId, MeetingStatus meetingStatus);
 
+    int countByGatheringIdAndMeetingStatusIn(Long gatheringId, List<MeetingStatus> meetingStatuses);
+
     @EntityGraph(attributePaths = {"book"})
     Page<Meeting> findByGatheringIdAndMeetingStatus(
             Long gatheringId,
             MeetingStatus meetingStatus,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"book"})
+    Page<Meeting> findByGatheringIdAndMeetingStatusIn(
+            Long gatheringId,
+            List<MeetingStatus> meetingStatuses,
             Pageable pageable
     );
 
