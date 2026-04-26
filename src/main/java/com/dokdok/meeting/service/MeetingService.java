@@ -672,23 +672,12 @@ public class MeetingService {
         gatheringValidator.validateMembership(gatheringId, userId);
 
         int allCount = meetingRepository
-                .countByGatheringIdAndMeetingStatus(gatheringId, MeetingStatus.CONFIRMED);
+                .countByGatheringIdAndMeetingStatusIn(gatheringId, List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE));
         int doneCount = meetingRepository
                 .countByGatheringIdAndMeetingStatus(gatheringId, MeetingStatus.DONE);
-
-        LocalDateTime now = LocalDateTime.now();
-        int upcomingCount = meetingRepository.countUpcomingMeetings(
-                gatheringId,
-                MeetingStatus.CONFIRMED,
-                now,
-                now.plusDays(3)
-        );
-
-        int joinedCount = meetingMemberRepository.countMeetingsByUserIdAndStatus(
-                userId,
-                gatheringId,
-                MeetingStatus.DONE
-        );
+        int upcomingCount = meetingRepository
+                .countByGatheringIdAndMeetingStatus(gatheringId, MeetingStatus.CONFIRMED);
+        int joinedCount = meetingMemberRepository.countMeetingsByUserIdAndGatheringId(userId, gatheringId);
 
         return MeetingTabCountsResponse.builder()
                 .all(allCount)
@@ -835,9 +824,9 @@ public class MeetingService {
             Pageable pageable,
             Long userId
     ) {
-        Page<Meeting> meetingPage = meetingRepository.findByGatheringIdAndMeetingStatus(
+        Page<Meeting> meetingPage = meetingRepository.findByGatheringIdAndMeetingStatusIn(
                 gatheringId,
-                MeetingStatus.CONFIRMED,
+                List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE),
                 pageable
         );
         return buildMeetingPageResponse(meetingPage, userId, gatheringId);
@@ -851,12 +840,9 @@ public class MeetingService {
             Pageable pageable,
             Long userId
     ) {
-        LocalDateTime now = LocalDateTime.now();
-        Page<Meeting> meetingPage = meetingRepository.findByGatheringIdAndMeetingStatusAndMeetingStartDateBetween(
+        Page<Meeting> meetingPage = meetingRepository.findByGatheringIdAndMeetingStatus(
                 gatheringId,
                 MeetingStatus.CONFIRMED,
-                now,
-                now.plusDays(3),
                 pageable
         );
         return buildMeetingPageResponse(meetingPage, userId, gatheringId);
