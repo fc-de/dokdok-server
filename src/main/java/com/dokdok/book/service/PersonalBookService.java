@@ -4,6 +4,7 @@ import com.dokdok.book.dto.request.BookCreateRequest;
 import com.dokdok.book.dto.request.PersonalBookSortBy;
 import com.dokdok.book.dto.request.PersonalBookSortOrder;
 import com.dokdok.book.dto.response.BookListCursor;
+import com.dokdok.book.dto.response.BookReadingTabCountsResponse;
 import com.dokdok.book.dto.response.PersonalBookCursorPageResponse;
 import com.dokdok.book.dto.response.PersonalBookCreateResponse;
 import com.dokdok.book.dto.response.PersonalBookDetailResponse;
@@ -194,6 +195,18 @@ public class PersonalBookService {
             PersonalBook personalBook = bookValidator.validateInBookShelf(userEntity.getId(), bookId);
             personalBookRepository.delete(personalBook);
         }
+    }
+
+    public BookReadingTabCountsResponse getBookReadingTabCounts() {
+        Long userId = SecurityUtil.getCurrentUserId();
+        PersonalBookStatusCountsResponse counts = buildStatusCounts(userId, null);
+        long before = counts.reading() + counts.pending();
+        long after = counts.completed();
+        return BookReadingTabCountsResponse.builder()
+                .all(counts.total())
+                .before(before)
+                .after(after)
+                .build();
     }
 
     /**

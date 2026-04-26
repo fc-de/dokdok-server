@@ -1779,11 +1779,9 @@ class MeetingServiceTest {
                 userId,
                 List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE)
         )).willReturn(5);
-        given(meetingMemberRepository.countMyUpcomingMeetings(
-                eq(userId),
-                eq(MeetingStatus.CONFIRMED),
-                any(),
-                any()
+        given(meetingMemberRepository.countMyMeetingsByStatus(
+                userId,
+                MeetingStatus.CONFIRMED
         )).willReturn(2);
         given(meetingMemberRepository.countMyMeetingsByStatusWithoutPersonalRetrospective(
                 userId,
