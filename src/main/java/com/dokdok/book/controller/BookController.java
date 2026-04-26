@@ -113,4 +113,10 @@ public class BookController implements BookApi {
         PersonalBookDetailResponse personalBook = personalBookService.updateReadingStatus(personalBookId);
         return ApiResponse.success(personalBook, "읽는 상태 업데이트 성공");
     }
+
+    @Override
+    @GetMapping("/reading/tab-counts")
+    public ResponseEntity<ApiResponse<BookReadingTabCountsResponse>> getBookReadingTabCounts() {
+        return ApiResponse.success(personalBookService.getBookReadingTabCounts(), "읽고 있는 책 탭 카운트 조회 성공");
+    }
 }

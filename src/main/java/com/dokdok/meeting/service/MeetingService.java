@@ -806,17 +806,14 @@ public class MeetingService {
     @Transactional(readOnly = true)
     public MyMeetingTabCountsResponse getMyMeetingTabCounts() {
         Long userId = SecurityUtil.getCurrentUserId();
-        LocalDateTime now = LocalDateTime.now();
 
         int allCount = meetingMemberRepository.countMyMeetingsByStatuses(
                 userId,
                 List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE)
         );
-        int upcomingCount = meetingMemberRepository.countMyUpcomingMeetings(
+        int upcomingCount = meetingMemberRepository.countMyMeetingsByStatus(
                 userId,
-                MeetingStatus.CONFIRMED,
-                now,
-                now.plusDays(3)
+                MeetingStatus.CONFIRMED
         );
         int doneCount = meetingMemberRepository.countMyMeetingsByStatusWithoutPersonalRetrospective(
                 userId,

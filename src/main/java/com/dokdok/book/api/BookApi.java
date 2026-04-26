@@ -873,4 +873,41 @@ public interface BookApi {
             @Parameter(description = "내 책장 항목 ID (personal_book PK)", required = true, example = "100")
             @RequestParam Long personalBookId
     );
+
+    @Operation(
+            summary = "홈화면 읽고 있는 책 탭 카운트 조회",
+            description = """
+            로그인 사용자의 전체 책장 탭 카운트를 조회합니다.
+            - 전체(all): 읽는 중 + 읽기 전 + 완독
+            - 약속 전(before): 읽는 중 + 읽기 전 (미완료 상태)
+            - 약속 후(after): 완독 상태
+            - all = before + after 항상 보장
+            """
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "탭 카운트 조회 성공",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = BookReadingTabCountsResponse.class),
+                            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(value = """
+                                    {
+                                      "code": "SUCCESS",
+                                      "message": "읽고 있는 책 탭 카운트 조회 성공",
+                                      "data": {
+                                        "all": 5,
+                                        "before": 3,
+                                        "after": 2
+                                      }
+                                    }
+                                    """))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(value = """
+                                    {"code": "E000", "message": "서버 에러가 발생했습니다. 담당자에게 문의 바랍니다.", "data": null}
+                                    """)))
+    })
+    @GetMapping("/reading/tab-counts")
+    ResponseEntity<ApiResponse<BookReadingTabCountsResponse>> getBookReadingTabCounts();
 }
