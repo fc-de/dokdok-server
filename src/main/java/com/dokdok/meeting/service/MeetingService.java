@@ -958,6 +958,12 @@ public class MeetingService {
         Set<Long> joinedMeetingIds = new HashSet<>(
                 meetingMemberRepository.findActiveMeetingIdsByUserIdAndGatheringId(userId, gatheringId)
         );
+        Set<Long> preOpinionMeetingIds = new HashSet<>(
+                topicAnswerRepository.findMeetingIdsWithSubmittedAnswers(meetingIds, userId)
+        );
+        Set<Long> retrospectiveMeetingIds = new HashSet<>(
+                personalRetrospectiveRepository.findMeetingIdsWithRetrospective(meetingIds, userId)
+        );
 
         List<MeetingListItemResponse> items = new ArrayList<>();
         for (Meeting meeting : meetings) {
@@ -978,6 +984,8 @@ public class MeetingService {
                     .joined(joined)
                     .myRole(myRole)
                     .meetingStatus(meeting.getMeetingStatus())
+                    .hasPreOpinion(preOpinionMeetingIds.contains(meeting.getId()))
+                    .hasPersonalRetrospective(retrospectiveMeetingIds.contains(meeting.getId()))
                     .build());
         }
         return items;
