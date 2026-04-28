@@ -1,5 +1,6 @@
 package com.dokdok.gathering.service;
 
+import com.dokdok.book.entity.Book;
 import com.dokdok.book.repository.BookReviewRepository;
 import com.dokdok.gathering.dto.request.GatheringCreateRequest;
 import com.dokdok.gathering.dto.request.GatheringUpdateRequest;
@@ -310,31 +311,35 @@ public class GatheringService {
         gatheringValidator.validateMembership(gatheringId, userId);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<GatheringBook> gatheringBookPage = gatheringBookRepository.findGatheringBooks(gatheringId, pageable);
+        Page<Book> bookPage = meetingRepository.findDistinctBooksByGatheringIdAndStatuses(
+                gatheringId,
+                List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE),
+                pageable
+        );
 
-        if (gatheringBookPage.isEmpty()) {
+        if (bookPage.isEmpty()) {
             return PageResponse.of(List.of(), 0, page, size);
         }
 
-        List<GatheringBook> gatheringBooks = gatheringBookPage.getContent();
-        Map<Long, Double> ratingMap = getBookRatingMap(gatheringId, gatheringBooks);
+        List<Book> books = bookPage.getContent();
+        Map<Long, Double> ratingMap = getBookRatingMap(gatheringId, books);
 
-        List<GatheringBookListResponse> responses = gatheringBooks.stream()
-                .map(gb -> GatheringBookListResponse.from(gb, ratingMap.get(gb.getBook().getId())))
+        List<GatheringBookListResponse> responses = books.stream()
+                .map(book -> GatheringBookListResponse.from(book, ratingMap.get(book.getId())))
                 .toList();
 
-        return PageResponse.of(responses, gatheringBookPage.getTotalElements(), page, size);
+        return PageResponse.of(responses, bookPage.getTotalElements(), page, size);
     }
 
-    private Map<Long, Double> getBookRatingMap(Long gatheringId, List<GatheringBook> gatheringBooks) {
+    private Map<Long, Double> getBookRatingMap(Long gatheringId, List<Book> books) {
         List<Long> meetingMemberIds = meetingMemberRepository.findByGatheringId(gatheringId);
 
         if (meetingMemberIds.isEmpty()) {
             return Map.of();
         }
 
-        List<Long> bookIds = gatheringBooks.stream()
-                .map(gb -> gb.getBook().getId())
+        List<Long> bookIds = books.stream()
+                .map(Book::getId)
                 .toList();
 
         return bookReviewRepository.findMeetingBookReviews(bookIds, meetingMemberIds).stream()

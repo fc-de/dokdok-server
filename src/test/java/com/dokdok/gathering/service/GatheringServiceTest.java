@@ -1302,20 +1302,8 @@ class GatheringServiceTest {
 				.isbn("978-0134757599")
 				.build();
 
-		GatheringBook gatheringBook1 = GatheringBook.builder()
-				.id(1L)
-				.gathering(gathering1)
-				.book(book1)
-				.build();
-
-		GatheringBook gatheringBook2 = GatheringBook.builder()
-				.id(2L)
-				.gathering(gathering1)
-				.book(book2)
-				.build();
-
-		List<GatheringBook> gatheringBooks = List.of(gatheringBook1, gatheringBook2);
-		Page<GatheringBook> gatheringBookPage = new PageImpl<>(gatheringBooks, PageRequest.of(page, size), 2);
+		List<Book> books = List.of(book1, book2);
+		Page<Book> bookPage = new PageImpl<>(books, PageRequest.of(page, size), 2);
 
 		List<Long> meetingMemberIds = List.of(1L, 2L, 3L);
 		List<BookRatingAverage> ratingAverages = List.of(
@@ -1324,8 +1312,8 @@ class GatheringServiceTest {
 		);
 
 		securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
-		given(gatheringBookRepository.findGatheringBooks(eq(gatheringId), any(Pageable.class)))
-				.willReturn(gatheringBookPage);
+		given(meetingRepository.findDistinctBooksByGatheringIdAndStatuses(eq(gatheringId), any(), any(Pageable.class)))
+				.willReturn(bookPage);
 		given(meetingMemberRepository.findByGatheringId(gatheringId)).willReturn(meetingMemberIds);
 		given(bookReviewRepository.findMeetingBookReviews(List.of(1L, 2L), meetingMemberIds))
 				.willReturn(ratingAverages);
@@ -1364,10 +1352,10 @@ class GatheringServiceTest {
 		int page = 0;
 		int size = 10;
 
-		Page<GatheringBook> emptyPage = new PageImpl<>(List.of(), PageRequest.of(page, size), 0);
+		Page<Book> emptyPage = new PageImpl<>(List.of(), PageRequest.of(page, size), 0);
 
 		securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
-		given(gatheringBookRepository.findGatheringBooks(eq(gatheringId), any(Pageable.class)))
+		given(meetingRepository.findDistinctBooksByGatheringIdAndStatuses(eq(gatheringId), any(), any(Pageable.class)))
 				.willReturn(emptyPage);
 
 		// when
@@ -1403,18 +1391,11 @@ class GatheringServiceTest {
 				.isbn("978-0132350884")
 				.build();
 
-		GatheringBook gatheringBook1 = GatheringBook.builder()
-				.id(1L)
-				.gathering(gathering1)
-				.book(book1)
-				.build();
-
-		List<GatheringBook> gatheringBooks = List.of(gatheringBook1);
-		Page<GatheringBook> gatheringBookPage = new PageImpl<>(gatheringBooks, PageRequest.of(page, size), 1);
+		Page<Book> bookPage = new PageImpl<>(List.of(book1), PageRequest.of(page, size), 1);
 
 		securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
-		given(gatheringBookRepository.findGatheringBooks(eq(gatheringId), any(Pageable.class)))
-				.willReturn(gatheringBookPage);
+		given(meetingRepository.findDistinctBooksByGatheringIdAndStatuses(eq(gatheringId), any(), any(Pageable.class)))
+				.willReturn(bookPage);
 		given(meetingMemberRepository.findByGatheringId(gatheringId)).willReturn(List.of());
 
 		// when
