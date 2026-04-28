@@ -347,7 +347,9 @@ public interface BookApi {
             @Parameter(description = "커서 - 마지막 아이템 bookId (cursorAddedAt과 함께 전달)")
             @RequestParam(required = false) Long cursorBookId,
             @Parameter(description = "한 페이지당 아이템 수", example = "10")
-            @RequestParam(required = false) Integer size
+            @RequestParam(required = false) Integer size,
+            @Parameter(description = "약속 진행 상태 필터 (BEFORE: 약속 전, AFTER: 약속 후)", example = "BEFORE")
+            @RequestParam(required = false) com.dokdok.book.entity.BookMeetingProgressStatus meetingProgressStatus
     );
 
     @Operation(
