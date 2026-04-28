@@ -5,6 +5,7 @@ import com.dokdok.book.dto.request.PersonalBookSortBy;
 import com.dokdok.book.dto.request.PersonalBookSortOrder;
 import com.dokdok.book.dto.response.BookListCursor;
 import com.dokdok.book.dto.response.BookReadingTabCountsResponse;
+import com.dokdok.book.entity.BookMeetingProgressStatus;
 import com.dokdok.book.dto.response.PersonalBookCursorPageResponse;
 import com.dokdok.book.dto.response.PersonalBookCreateResponse;
 import com.dokdok.book.dto.response.PersonalBookDetailResponse;
@@ -115,7 +116,8 @@ public class PersonalBookService {
             BigDecimal cursorRating,
             OffsetDateTime cursorAddedAt,
             Long cursorBookId,
-            Integer size
+            Integer size,
+            BookMeetingProgressStatus meetingProgressStatus
     ) {
         User userEntity = userValidator.findUserOrThrow(SecurityUtil.getCurrentUserId());
         String readingStatus = bookReadingStatus != null ? bookReadingStatus.name() : null;
@@ -133,6 +135,8 @@ public class PersonalBookService {
                 )
                 .stream()
                 .filter(item -> isWithinRatingRange(item.getRating(), minRating, maxRating))
+                .filter(item -> meetingProgressStatus == null
+                        || meetingProgressStatus.name().equals(item.getMeetingProgressStatus()))
                 .toList();
 
         List<PersonalBookListProjection> sorted = filtered.stream()
@@ -394,6 +398,11 @@ public class PersonalBookService {
 
         @Override
         public String getGatherings() {
+            return null;
+        }
+
+        @Override
+        public String getMeetingProgressStatus() {
             return null;
         }
     }

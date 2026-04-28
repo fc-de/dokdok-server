@@ -33,7 +33,26 @@ public interface PersonalBookRepository extends JpaRepository<PersonalBook, Long
                             filter (where g.gathering_id is not null),
                         '[]'::json
                     )::text as gatherings,
-                    max(pb.added_at) as addedAt
+                    max(pb.added_at) as addedAt,
+                    (
+                        select
+                            case
+                                when bool_or(m.meeting_status = 'CONFIRMED') then 'BEFORE'
+                                when count(m.meeting_id) > 0 and bool_and(m.meeting_status = 'DONE') then 'AFTER'
+                                else null
+                            end
+                        from meeting m
+                        where m.book_id = b.book_id
+                            and m.deleted_at is null
+                            and (:gatheringId is null or m.gathering_id = :gatheringId)
+                            and m.gathering_id in (
+                                select pb2.gathering_id from personal_book pb2
+                                where pb2.book_id = b.book_id
+                                    and pb2.user_id = :userId
+                                    and pb2.deleted_at is null
+                                    and pb2.gathering_id is not null
+                            )
+                    ) as meetingProgressStatus
                 from personal_book pb
                 join book b on pb.book_id = b.book_id
                 left join gathering g
@@ -85,7 +104,26 @@ public interface PersonalBookRepository extends JpaRepository<PersonalBook, Long
                             filter (where g.gathering_id is not null),
                         '[]'::json
                     )::text as gatherings,
-                    max(pb.added_at) as addedAt
+                    max(pb.added_at) as addedAt,
+                    (
+                        select
+                            case
+                                when bool_or(m.meeting_status = 'CONFIRMED') then 'BEFORE'
+                                when count(m.meeting_id) > 0 and bool_and(m.meeting_status = 'DONE') then 'AFTER'
+                                else null
+                            end
+                        from meeting m
+                        where m.book_id = b.book_id
+                            and m.deleted_at is null
+                            and (:gatheringId is null or m.gathering_id = :gatheringId)
+                            and m.gathering_id in (
+                                select pb2.gathering_id from personal_book pb2
+                                where pb2.book_id = b.book_id
+                                    and pb2.user_id = :userId
+                                    and pb2.deleted_at is null
+                                    and pb2.gathering_id is not null
+                            )
+                    ) as meetingProgressStatus
                 from personal_book pb
                 join book b on pb.book_id = b.book_id
                 left join gathering g

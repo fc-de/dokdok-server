@@ -335,6 +335,11 @@ class PersonalBookServiceTest {
             public LocalDateTime getAddedAt() {
                 return addedAt;
             }
+
+            @Override
+            public String getMeetingProgressStatus() {
+                return null;
+            }
         };
 
         Page<PersonalBookListProjection> page = new PageImpl<>(List.of(projection), pageable, 1);
@@ -700,7 +705,8 @@ class PersonalBookServiceTest {
                 null,
                 null,
                 null,
-                10
+                10,
+                null
         );
 
         // then
@@ -747,7 +753,8 @@ class PersonalBookServiceTest {
                 new BigDecimal("4.0"),
                 OffsetDateTime.of(secondAddedAt, ZoneOffset.UTC),
                 20L,
-                10
+                10,
+                null
         );
 
         // then
@@ -813,6 +820,11 @@ class PersonalBookServiceTest {
             @Override
             public LocalDateTime getAddedAt() {
                 return addedAt;
+            }
+
+            @Override
+            public String getMeetingProgressStatus() {
+                return null;
             }
         };
     }

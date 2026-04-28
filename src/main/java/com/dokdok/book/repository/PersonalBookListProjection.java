@@ -15,4 +15,5 @@ public interface PersonalBookListProjection {
     BigDecimal getRating();
     String getGatherings();
     java.time.LocalDateTime getAddedAt();
+    String getMeetingProgressStatus();
 }
