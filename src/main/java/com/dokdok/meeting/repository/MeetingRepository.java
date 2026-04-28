@@ -156,6 +156,20 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
             """)
     List<Meeting> findByIdInWithGathering(@Param("meetingIds") List<Long> meetingIds);
 
+    @Query("""
+            SELECT DISTINCT m.book
+            FROM Meeting m
+            WHERE m.gathering.id = :gatheringId
+            AND m.meetingStatus IN :meetingStatuses
+            AND m.book IS NOT NULL
+            ORDER BY m.book.id ASC
+            """)
+    Page<com.dokdok.book.entity.Book> findDistinctBooksByGatheringIdAndStatuses(
+            @Param("gatheringId") Long gatheringId,
+            @Param("meetingStatuses") List<MeetingStatus> meetingStatuses,
+            Pageable pageable
+    );
+
     /**
      * 여러 모임의 완료된 미팅 수를 한번에 조회
      */
