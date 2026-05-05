@@ -72,9 +72,10 @@ public class PersonalRetrospectiveService {
         retrospectiveValidator.validateRetrospective(meetingId, userId);
 
         PersonalMeetingRetrospective retrospective = PersonalMeetingRetrospective.create(meeting, user);
-        PersonalMeetingRetrospective saved = personalRetrospectiveRepository.save(retrospective);
 
-        setRetrospectiveData(saved, request, meetingId, userId);
+        setRetrospectiveData(retrospective, request, meetingId, userId);
+
+        PersonalMeetingRetrospective saved = personalRetrospectiveRepository.save(retrospective);
 
         return PersonalRetrospectiveResponse.from(saved);
     }
