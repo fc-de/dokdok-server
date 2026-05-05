@@ -31,8 +31,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BaseException.class)
     protected ResponseEntity<ApiResponse<Void>> handleBaseException(BaseException e) {
         BaseErrorCode errorCode = e.getErrorCode();
-        log.warn("BaseException: code={}, message={}",
-                errorCode.getCode(), e.getMessage(), e);
+        StackTraceElement origin = e.getStackTrace()[0];
+        log.warn("BaseException: code={}, message={}, at={}.{}({}:{})",
+                errorCode.getCode(), e.getMessage(),
+                origin.getClassName(), origin.getMethodName(),
+                origin.getFileName(), origin.getLineNumber());
 
         return ApiResponse.error(
                 errorCode.getStatus(),
@@ -46,7 +49,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAuthorizationDeniedException(
             AuthorizationDeniedException e
     ) {
-        log.error("Authorization Denied - Message: {}", e.getMessage(), e);
+        log.error("Authorization Denied - Message: {}", e.getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
@@ -66,7 +69,7 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
 
-        log.warn("Validation Failed - Message: {}", errorMessage, e);
+        log.warn("Validation Failed - Message: {}", errorMessage);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -86,7 +89,7 @@ public class GlobalExceptionHandler {
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining(", "));
 
-        log.warn("Constraint Violation - Message: {}", errorMessage, e);
+        log.warn("Constraint Violation - Message: {}", errorMessage);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -102,7 +105,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleHttpRequestMethodNotSupportedException(
             HttpRequestMethodNotSupportedException e
     ) {
-        log.warn("Method Not Supported - Method: {}, Message: {}", e.getMethod(), e.getMessage(), e);
+        log.warn("Method Not Supported - Method: {}, Message: {}", e.getMethod(), e.getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
@@ -119,7 +122,7 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException e
     ) {
         String errorMessage = String.format("필수 파라미터 '%s'가 누락되었습니다.", e.getParameterName());
-        log.warn("Missing Parameter - Name: {}, Type: {}", e.getParameterName(), e.getParameterType(), e);
+        log.warn("Missing Parameter - Name: {}, Type: {}", e.getParameterName(), e.getParameterType());
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -137,7 +140,7 @@ public class GlobalExceptionHandler {
     ) {
         String errorMessage = String.format("'%s' 값이 올바르지 않습니다.", e.getName());
         log.warn("Type Mismatch - Name: {}, Value: {}, RequiredType: {}",
-                e.getName(), e.getValue(), e.getRequiredType(), e);
+                e.getName(), e.getValue(), e.getRequiredType());
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -153,7 +156,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException e
     ) {
-        log.error("Message Not Readable - Message: {}", e.getMessage(), e);
+        log.error("Message Not Readable - Message: {}", e.getMessage());
 
         // enum 파싱 실패인지 확인
         if (e.getCause() instanceof InvalidFormatException ife) {
@@ -183,7 +186,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(
             MaxUploadSizeExceededException e
     ) {
-        log.warn("Max Upload Size Exceeded - Message: {}", e.getMessage(), e);
+        log.warn("Max Upload Size Exceeded - Message: {}", e.getMessage());
 
         return ResponseEntity
                 .status(StorageErrorCode.FILE_SIZE_EXCEEDED.getStatus())
