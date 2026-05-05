@@ -384,6 +384,7 @@ class PersonalRetrospectiveServiceTest {
             when(meetingValidator.findMeetingOrThrow(meetingId)).thenReturn(meeting);
             when(userValidator.findUserOrThrow(userId)).thenReturn(user);
             doNothing().when(retrospectiveValidator).validateRetrospective(meetingId, userId);
+            when(personalRetrospectiveRepository.save(any())).thenReturn(PersonalMeetingRetrospective.create(meeting, user));
             when(topicValidator.getTopicInMeeting(topicId, meetingId))
                     .thenThrow(new IllegalArgumentException("주제를 찾을 수 없습니다."));
 
@@ -391,8 +392,6 @@ class PersonalRetrospectiveServiceTest {
             assertThatThrownBy(() -> personalRetrospectiveService.createPersonalRetrospective(meetingId, request))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("주제를 찾을 수 없습니다.");
-
-            verify(personalRetrospectiveRepository, never()).save(any());
         }
     }
 
