@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiResponse<Void>> handleBaseException(BaseException e) {
         BaseErrorCode errorCode = e.getErrorCode();
         log.warn("BaseException: code={}, message={}",
-                errorCode.getCode(), e.getMessage());
+                errorCode.getCode(), e.getMessage(), e);
 
         return ApiResponse.error(
                 errorCode.getStatus(),
@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAuthorizationDeniedException(
             AuthorizationDeniedException e
     ) {
-        log.error("Authorization Denied - Message: {}", e.getMessage());
+        log.error("Authorization Denied - Message: {}", e.getMessage(), e);
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
 
-        log.warn("Validation Failed - Message: {}", errorMessage);
+        log.warn("Validation Failed - Message: {}", errorMessage, e);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -86,7 +86,7 @@ public class GlobalExceptionHandler {
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining(", "));
 
-        log.warn("Constraint Violation - Message: {}", errorMessage);
+        log.warn("Constraint Violation - Message: {}", errorMessage, e);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -102,7 +102,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleHttpRequestMethodNotSupportedException(
             HttpRequestMethodNotSupportedException e
     ) {
-        log.warn("Method Not Supported - Method: {}, Message: {}", e.getMethod(), e.getMessage());
+        log.warn("Method Not Supported - Method: {}, Message: {}", e.getMethod(), e.getMessage(), e);
 
         return ResponseEntity
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
@@ -119,7 +119,7 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException e
     ) {
         String errorMessage = String.format("필수 파라미터 '%s'가 누락되었습니다.", e.getParameterName());
-        log.warn("Missing Parameter - Name: {}, Type: {}", e.getParameterName(), e.getParameterType());
+        log.warn("Missing Parameter - Name: {}, Type: {}", e.getParameterName(), e.getParameterType(), e);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -137,7 +137,7 @@ public class GlobalExceptionHandler {
     ) {
         String errorMessage = String.format("'%s' 값이 올바르지 않습니다.", e.getName());
         log.warn("Type Mismatch - Name: {}, Value: {}, RequiredType: {}",
-                e.getName(), e.getValue(), e.getRequiredType());
+                e.getName(), e.getValue(), e.getRequiredType(), e);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -153,7 +153,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException e
     ) {
-        log.error("Message Not Readable - Message: {}", e.getMessage());
+        log.error("Message Not Readable - Message: {}", e.getMessage(), e);
 
         // enum 파싱 실패인지 확인
         if (e.getCause() instanceof InvalidFormatException ife) {
@@ -183,7 +183,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(
             MaxUploadSizeExceededException e
     ) {
-        log.warn("Max Upload Size Exceeded - Message: {}", e.getMessage());
+        log.warn("Max Upload Size Exceeded - Message: {}", e.getMessage(), e);
 
         return ResponseEntity
                 .status(StorageErrorCode.FILE_SIZE_EXCEEDED.getStatus())
