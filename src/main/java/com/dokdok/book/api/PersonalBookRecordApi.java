@@ -4,6 +4,7 @@ import com.dokdok.book.dto.request.PersonalReadingRecordCreateRequest;
 import com.dokdok.book.dto.request.PersonalReadingRecordUpdateRequest;
 import com.dokdok.book.dto.request.PreOpinionTimeType;
 import com.dokdok.book.dto.response.*;
+import com.dokdok.book.entity.RecordType;
 import com.dokdok.global.response.ApiResponse;
 import com.dokdok.global.response.CursorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Tag(name = "독서 기록", description = "책별 독서 기록 관련 API")
 @RequestMapping("/api/book")
@@ -434,6 +436,7 @@ public interface PersonalBookRecordApi {
                     내 책장에 있는 책의 독서 기록을 조회합니다.
                     - 경로의 personalBookId로 책을 지정합니다.
                     - 로그인한 사용자 기준으로 본인 책의 기록만 조회됩니다.
+                    - recordTypes 파라미터로 기록 유형(MEMO/QUOTE)을 복수 필터링할 수 있습니다. 미전달 시 전체 조회됩니다.
                     - cursorCreatedAt/cursorRecordId/size 파라미터로 다음 페이지를 조회합니다.
                     """
     )
@@ -530,6 +533,8 @@ public interface PersonalBookRecordApi {
     ResponseEntity<ApiResponse<CursorPageResponse<PersonalReadingRecordListResponse, ReadingRecordCursor>>> getMyReadingRecords(
             @Parameter(description = "개인 책장 ID (personal_book 테이블 PK)", required = true, example = "10")
             @PathVariable Long personalBookId,
+            @Parameter(description = "기록 유형 필터 (MEMO | QUOTE). 복수 전달 가능. 미전달 시 전체 조회", example = "MEMO")
+            @RequestParam(required = false) List<RecordType> recordTypes,
             @Parameter(
                     description = "커서 - 마지막 아이템 createdAt (ISO 8601, cursorRecordId와 함께 전달)",
                     example = ""

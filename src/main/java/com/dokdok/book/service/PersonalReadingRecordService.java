@@ -111,6 +111,7 @@ public class PersonalReadingRecordService {
 
     public CursorPageResponse<PersonalReadingRecordListResponse, ReadingRecordCursor> getRecords(
             Long personalBookId,
+            List<RecordType> recordTypes,
             OffsetDateTime cursorCreatedAt,
             Long cursorRecordId,
             Integer size
@@ -120,9 +121,19 @@ public class PersonalReadingRecordService {
         int pageSize = resolvePageSize(size);
         LocalDateTime cursorCreatedAtValue = cursorCreatedAt != null ? cursorCreatedAt.toLocalDateTime() : null;
 
+        boolean hasTypeFilter = recordTypes != null && !recordTypes.isEmpty();
         boolean hasCursor = cursorCreatedAtValue != null && cursorRecordId != null;
         List<PersonalReadingRecord> entities;
-        if (hasCursor) {
+        if (hasCursor && hasTypeFilter) {
+            entities = personalReadingRecordRepository.findRecordsByCursorAndTypes(
+                    personalBookEntity.getId(),
+                    userEntity.getId(),
+                    recordTypes,
+                    cursorCreatedAtValue,
+                    cursorRecordId,
+                    PageRequest.of(0, pageSize + 1)
+            );
+        } else if (hasCursor) {
             entities = personalReadingRecordRepository.findRecordsByCursor(
                     personalBookEntity.getId(),
                     userEntity.getId(),
@@ -130,23 +141,29 @@ public class PersonalReadingRecordService {
                     cursorRecordId,
                     PageRequest.of(0, pageSize + 1)
             );
+        } else if (hasTypeFilter) {
+            entities = personalReadingRecordRepository
+                    .findAllByPersonalBook_IdAndUserIdAndRecordTypeIn(
+                            personalBookEntity.getId(),
+                            userEntity.getId(),
+                            recordTypes,
+                            PageRequest.of(0, pageSize + 1, Sort.by(Sort.Direction.DESC, "createdAt", "id"))
+                    )
+                    .getContent();
         } else {
             entities = personalReadingRecordRepository
                     .findAllByPersonalBook_IdAndUserId(
                             personalBookEntity.getId(),
                             userEntity.getId(),
-                            PageRequest.of(
-                                    0,
-                                    pageSize + 1,
-                                    Sort.by(Sort.Direction.DESC, "createdAt", "id")
-                            )
+                            PageRequest.of(0, pageSize + 1, Sort.by(Sort.Direction.DESC, "createdAt", "id"))
                     )
                     .getContent();
         }
-        long totalCount = personalReadingRecordRepository.countByPersonalBook_IdAndUserId(
-                personalBookEntity.getId(),
-                userEntity.getId()
-        );
+        long totalCount = hasTypeFilter
+                ? personalReadingRecordRepository.countByPersonalBook_IdAndUserIdAndRecordTypeIn(
+                        personalBookEntity.getId(), userEntity.getId(), recordTypes)
+                : personalReadingRecordRepository.countByPersonalBook_IdAndUserId(
+                        personalBookEntity.getId(), userEntity.getId());
 
         boolean hasNext = entities.size() > pageSize;
         List<PersonalReadingRecord> pageEntities = hasNext ? entities.subList(0, pageSize) : entities;
