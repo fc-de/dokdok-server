@@ -5,6 +5,7 @@ import com.dokdok.book.dto.request.PersonalReadingRecordCreateRequest;
 import com.dokdok.book.dto.request.PersonalReadingRecordUpdateRequest;
 import com.dokdok.book.dto.request.PreOpinionTimeType;
 import com.dokdok.book.dto.response.*;
+import com.dokdok.book.entity.RecordType;
 import com.dokdok.book.service.PersonalReadingRecordService;
 import com.dokdok.book.service.ReadingTimelineService;
 import com.dokdok.global.response.CursorResponse;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -50,6 +52,7 @@ public class PersonalBookRecordController implements PersonalBookRecordApi {
     @GetMapping("/{personalBookId}/records")
     public ResponseEntity<ApiResponse<CursorPageResponse<PersonalReadingRecordListResponse, ReadingRecordCursor>>> getMyReadingRecords(
             @PathVariable Long personalBookId,
+            @RequestParam(required = false) List<RecordType> recordTypes,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             OffsetDateTime cursorCreatedAt,
@@ -57,7 +60,7 @@ public class PersonalBookRecordController implements PersonalBookRecordApi {
             @RequestParam(required = false) Integer size
     ) {
         CursorPageResponse<PersonalReadingRecordListResponse, ReadingRecordCursor> response =
-                personalReadingRecordService.getRecords(personalBookId, cursorCreatedAt, cursorRecordId, size);
+                personalReadingRecordService.getRecords(personalBookId, recordTypes, cursorCreatedAt, cursorRecordId, size);
         return ApiResponse.success(response, "기록 조회 성공");
 
     }
