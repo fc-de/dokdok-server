@@ -229,6 +229,18 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
     );
 
     @Query("""
+            SELECT t
+            FROM Topic t
+            WHERE t.meeting.id = :meetingId
+            AND t.topicStatus = com.dokdok.topic.entity.TopicStatus.PROPOSED
+            AND t.deletedAt IS NULL
+            ORDER BY t.likeCount DESC, t.id ASC
+            """)
+    List<Topic> findAutoConfirmCandidates(
+            @Param("meetingId") Long meetingId
+    );
+
+    @Query("""
             SELECT DISTINCT t.meeting.id
             FROM Topic t
             WHERE t.meeting.id IN :meetingIds

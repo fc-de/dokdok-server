@@ -126,19 +126,46 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
             MeetingStatus meetingStatus
     );
 
-    // Scheduler용: 시작 시간이 지났고 임시저장 사전의견이 있는 CONFIRMED 상태의 Meeting 조회
+    // Scheduler용: 약속 당일이고 임시저장 사전의견이 있는 CONFIRMED 상태의 Meeting 조회
     @Query("""
             SELECT DISTINCT m
             FROM Meeting m
             JOIN FETCH m.book b
             JOIN Topic t ON t.meeting = m
             JOIN TopicAnswer ta ON ta.topic = t
-            WHERE m.meetingStartDate <= :now
+            WHERE m.meetingStartDate >= :dayStart
+            AND m.meetingStartDate < :nextDayStart
             AND m.meetingStatus = :meetingStatus
             AND ta.isSubmitted = false
             """)
-    List<Meeting> findStartedMeetingsWithDraftPreOpinions(
-            @Param("now") LocalDateTime now,
+    List<Meeting> findMeetingsOnDateWithDraftPreOpinions(
+            @Param("dayStart") LocalDateTime dayStart,
+            @Param("nextDayStart") LocalDateTime nextDayStart,
+            @Param("meetingStatus") MeetingStatus meetingStatus
+    );
+
+    // Scheduler용: 시작 24시간 이내이고 확정 주제가 없는 CONFIRMED 상태의 Meeting 조회
+    @Query("""
+            SELECT DISTINCT m
+            FROM Meeting m
+            WHERE m.meetingStartDate <= :deadline
+            AND m.meetingStatus = :meetingStatus
+            AND NOT EXISTS (
+                SELECT 1
+                FROM Topic t
+                WHERE t.meeting = m
+                AND t.topicStatus = com.dokdok.topic.entity.TopicStatus.CONFIRMED
+                AND t.deletedAt IS NULL
+            )
+            AND EXISTS (
+                SELECT 1
+                FROM Topic t
+                WHERE t.meeting = m
+                AND t.deletedAt IS NULL
+            )
+            """)
+    List<Meeting> findMeetingsDueForTopicAutoConfirm(
+            @Param("deadline") LocalDateTime deadline,
             @Param("meetingStatus") MeetingStatus meetingStatus
     );
 

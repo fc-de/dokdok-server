@@ -264,6 +264,52 @@ class TopicServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("자동 확정 대상 주제를 조회된 순서대로 확정한다")
+    void autoConfirmTopics_Success() {
+        Meeting meeting = Meeting.builder()
+                .id(10L)
+                .build();
+        Topic topic1 = Topic.builder()
+                .id(21L)
+                .meeting(meeting)
+                .topicStatus(TopicStatus.PROPOSED)
+                .build();
+        Topic topic2 = Topic.builder()
+                .id(22L)
+                .meeting(meeting)
+                .topicStatus(TopicStatus.PROPOSED)
+                .build();
+
+        given(topicRepository.findAutoConfirmCandidates(meeting.getId()))
+                .willReturn(List.of(topic1, topic2));
+
+        TopicService.AutoConfirmResult result = topicService.autoConfirmTopics(meeting);
+
+        assertThat(result.meetingId()).isEqualTo(meeting.getId());
+        assertThat(result.confirmedTopicCount()).isEqualTo(2);
+        assertThat(topic1.getTopicStatus()).isEqualTo(TopicStatus.CONFIRMED);
+        assertThat(topic1.getConfirmOrder()).isEqualTo(1);
+        assertThat(topic2.getTopicStatus()).isEqualTo(TopicStatus.CONFIRMED);
+        assertThat(topic2.getConfirmOrder()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("자동 확정 대상 주제가 없으면 아무 것도 확정하지 않는다")
+    void autoConfirmTopics_Empty() {
+        Meeting meeting = Meeting.builder()
+                .id(10L)
+                .build();
+
+        given(topicRepository.findAutoConfirmCandidates(meeting.getId()))
+                .willReturn(List.of());
+
+        TopicService.AutoConfirmResult result = topicService.autoConfirmTopics(meeting);
+
+        assertThat(result.meetingId()).isEqualTo(meeting.getId());
+        assertThat(result.confirmedTopicCount()).isZero();
+    }
+
     @Nested
     @DisplayName("getConfirmedTopics - 확정 주제 조회")
     class GetConfirmedTopicsTest {
