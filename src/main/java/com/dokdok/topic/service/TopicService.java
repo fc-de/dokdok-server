@@ -202,6 +202,22 @@ public class TopicService {
         return ConfirmTopicsResponse.from(meetingId, confirmedTopics);
     }
 
+    @Transactional
+    public AutoConfirmResult autoConfirmTopics(Meeting meeting) {
+        List<Topic> topics = topicRepository.findAutoConfirmCandidates(meeting.getId());
+        if (topics.isEmpty()) {
+            return AutoConfirmResult.empty(meeting.getId());
+        }
+
+        int order = 1;
+        for (Topic topic : topics) {
+            topic.updateStatus(TopicStatus.CONFIRMED);
+            topic.updateConfirmOrder(order++);
+        }
+
+        return new AutoConfirmResult(meeting.getId(), topics.size());
+    }
+
     @Transactional(readOnly = true)
     public ConfirmedTopicsResponse getConfirmedTopics(
             Long gatheringId,
@@ -316,5 +332,14 @@ public class TopicService {
         }
 
         return TopicLikeResponse.from(topicId, message, newCount);
+    }
+
+    public record AutoConfirmResult(
+            Long meetingId,
+            int confirmedTopicCount
+    ) {
+        private static AutoConfirmResult empty(Long meetingId) {
+            return new AutoConfirmResult(meetingId, 0);
+        }
     }
 }
