@@ -18,6 +18,7 @@ import com.dokdok.book.exception.BookErrorCode;
 import com.dokdok.book.exception.BookException;
 import com.dokdok.book.repository.BookRepository;
 import com.dokdok.book.repository.PersonalBookListProjection;
+import com.dokdok.book.repository.BookReviewRepository;
 import com.dokdok.book.repository.PersonalBookRepository;
 import com.dokdok.book.repository.PersonalBookStatusCountProjection;
 import com.dokdok.gathering.entity.Gathering;
@@ -48,6 +49,7 @@ public class PersonalBookService {
     private final BookRepository bookRepository;
     private final UserValidator userValidator;
     private final BookValidator bookValidator;
+    private final BookReviewRepository bookReviewRepository;
 
     // 생성
     @Transactional
@@ -185,6 +187,8 @@ public class PersonalBookService {
         PersonalBook personalBook = bookValidator.validateInBookShelf(userEntity.getId(), bookId);
 
         personalBookRepository.delete(personalBook);
+        bookReviewRepository.findByBookIdAndUserId(bookId, userEntity.getId())
+                .ifPresent(review -> review.deleteReview());
     }
 
     @Transactional
@@ -198,6 +202,8 @@ public class PersonalBookService {
         for (Long bookId : distinctBookIds) {
             PersonalBook personalBook = bookValidator.validateInBookShelf(userEntity.getId(), bookId);
             personalBookRepository.delete(personalBook);
+            bookReviewRepository.findByBookIdAndUserId(bookId, userEntity.getId())
+                    .ifPresent(review -> review.deleteReview());
         }
     }
 
