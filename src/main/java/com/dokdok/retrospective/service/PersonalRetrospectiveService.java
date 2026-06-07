@@ -23,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dokdok.retrospective.exception.RetrospectiveErrorCode;
+import com.dokdok.retrospective.exception.RetrospectiveException;
 import com.dokdok.global.util.SecurityUtil;
 import com.dokdok.meeting.entity.Meeting;
 import com.dokdok.retrospective.dto.request.PersonalRetrospectiveRequest;
@@ -73,6 +75,7 @@ public class PersonalRetrospectiveService {
         meetingValidator.validateMeetingMember(meetingId, userId);
 
         retrospectiveValidator.validateRetrospective(meetingId, userId);
+        validateRetrospectiveContent(request);
 
         PersonalMeetingRetrospective retrospective = PersonalMeetingRetrospective.create(meeting, user);
         PersonalMeetingRetrospective saved = personalRetrospectiveRepository.save(retrospective);
@@ -169,6 +172,8 @@ public class PersonalRetrospectiveService {
         meetingValidator.validateMeetingMember(meetingId, userId);
         PersonalMeetingRetrospective retrospective
                 = retrospectiveValidator.getRetrospectiveByMeetingAndUser(meetingId, userId);
+
+        validateRetrospectiveContent(request);
 
         retrospective.clearChangedThoughts();
         retrospective.clearOthersPerspectives();
@@ -365,6 +370,16 @@ public class PersonalRetrospectiveService {
 
                 retrospective.addFreeText(text);
             }
+        }
+    }
+
+    private void validateRetrospectiveContent(PersonalRetrospectiveRequest request) {
+        boolean hasChangedThoughts = request.changedThoughts() != null && !request.changedThoughts().isEmpty();
+        boolean hasOthersPerspectives = request.othersPerspectives() != null && !request.othersPerspectives().isEmpty();
+        boolean hasFreeTexts = request.freeTexts() != null && !request.freeTexts().isEmpty();
+
+        if (!hasChangedThoughts && !hasOthersPerspectives && !hasFreeTexts) {
+            throw new RetrospectiveException(RetrospectiveErrorCode.RETROSPECTIVE_CONTENT_EMPTY);
         }
     }
 
