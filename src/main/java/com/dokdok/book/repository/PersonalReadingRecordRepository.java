@@ -14,10 +14,6 @@ import java.util.Optional;
 
 public interface PersonalReadingRecordRepository extends JpaRepository<PersonalReadingRecord, Long> {
     Optional<PersonalReadingRecord> findByIdAndPersonalBook_IdAndUserId(Long id, Long personalBookId, Long userId);
-    Page<PersonalReadingRecord> findAllByPersonalBook_IdAndUserId(Long personalBookId, Long userId, Pageable pageable);
-    Page<PersonalReadingRecord> findAllByPersonalBook_IdAndUserIdAndRecordTypeIn(Long personalBookId, Long userId, List<RecordType> recordTypes, Pageable pageable);
-    long countByPersonalBook_IdAndUserId(Long personalBookId, Long userId);
-    long countByPersonalBook_IdAndUserIdAndRecordTypeIn(Long personalBookId, Long userId, List<RecordType> recordTypes);
     List<PersonalReadingRecord> findByIdInAndPersonalBook_IdAndUserId(List<Long> ids, Long personalBookId, Long userId);
 
     @Query("""
@@ -25,6 +21,39 @@ public interface PersonalReadingRecordRepository extends JpaRepository<PersonalR
             from PersonalReadingRecord record
             where record.personalBook.id = :personalBookId
                 and record.user.id = :userId
+                and (:gatheringId is null or record.personalBook.gathering.id = :gatheringId)
+                and (:recordType is null or record.recordType = :recordType)
+            """)
+    Page<PersonalReadingRecord> findRecords(
+            @Param("personalBookId") Long personalBookId,
+            @Param("userId") Long userId,
+            @Param("gatheringId") Long gatheringId,
+            @Param("recordType") RecordType recordType,
+            Pageable pageable
+    );
+
+    @Query("""
+            select count(record)
+            from PersonalReadingRecord record
+            where record.personalBook.id = :personalBookId
+                and record.user.id = :userId
+                and (:gatheringId is null or record.personalBook.gathering.id = :gatheringId)
+                and (:recordType is null or record.recordType = :recordType)
+            """)
+    long countRecords(
+            @Param("personalBookId") Long personalBookId,
+            @Param("userId") Long userId,
+            @Param("gatheringId") Long gatheringId,
+            @Param("recordType") RecordType recordType
+    );
+
+    @Query("""
+            select record
+            from PersonalReadingRecord record
+            where record.personalBook.id = :personalBookId
+                and record.user.id = :userId
+                and (:gatheringId is null or record.personalBook.gathering.id = :gatheringId)
+                and (:recordType is null or record.recordType = :recordType)
                 and (
                     :cursorCreatedAt is null
                     or record.createdAt < :cursorCreatedAt
@@ -35,6 +64,8 @@ public interface PersonalReadingRecordRepository extends JpaRepository<PersonalR
     List<PersonalReadingRecord> findRecordsByCursor(
             @Param("personalBookId") Long personalBookId,
             @Param("userId") Long userId,
+            @Param("gatheringId") Long gatheringId,
+            @Param("recordType") RecordType recordType,
             @Param("cursorCreatedAt") LocalDateTime cursorCreatedAt,
             @Param("cursorRecordId") Long cursorRecordId,
             Pageable pageable
@@ -45,18 +76,20 @@ public interface PersonalReadingRecordRepository extends JpaRepository<PersonalR
             from PersonalReadingRecord record
             where record.personalBook.id = :personalBookId
                 and record.user.id = :userId
-                and record.recordType in :recordTypes
+                and (:gatheringId is null or record.personalBook.gathering.id = :gatheringId)
+                and (:recordType is null or record.recordType = :recordType)
                 and (
                     :cursorCreatedAt is null
-                    or record.createdAt < :cursorCreatedAt
-                    or (record.createdAt = :cursorCreatedAt and record.id < :cursorRecordId)
+                    or record.createdAt > :cursorCreatedAt
+                    or (record.createdAt = :cursorCreatedAt and record.id > :cursorRecordId)
                 )
-            order by record.createdAt desc, record.id desc
+            order by record.createdAt asc, record.id asc
             """)
-    List<PersonalReadingRecord> findRecordsByCursorAndTypes(
+    List<PersonalReadingRecord> findRecordsByCursorAsc(
             @Param("personalBookId") Long personalBookId,
             @Param("userId") Long userId,
-            @Param("recordTypes") List<RecordType> recordTypes,
+            @Param("gatheringId") Long gatheringId,
+            @Param("recordType") RecordType recordType,
             @Param("cursorCreatedAt") LocalDateTime cursorCreatedAt,
             @Param("cursorRecordId") Long cursorRecordId,
             Pageable pageable

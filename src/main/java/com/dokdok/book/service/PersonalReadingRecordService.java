@@ -111,59 +111,53 @@ public class PersonalReadingRecordService {
 
     public CursorPageResponse<PersonalReadingRecordListResponse, ReadingRecordCursor> getRecords(
             Long personalBookId,
-            List<RecordType> recordTypes,
+            Long gatheringId,
+            RecordType recordType,
             OffsetDateTime cursorCreatedAt,
             Long cursorRecordId,
-            Integer size
+            Integer size,
+            Sort.Direction sort
     ) {
         User userEntity = userValidator.findUserOrThrow(SecurityUtil.getCurrentUserId());
         PersonalBook personalBookEntity = bookValidator.validatePersonalBook(userEntity.getId(), personalBookId);
         int pageSize = resolvePageSize(size);
         LocalDateTime cursorCreatedAtValue = cursorCreatedAt != null ? cursorCreatedAt.toLocalDateTime() : null;
+        Sort.Direction effectiveSort = sort != null ? sort : Sort.Direction.DESC;
 
-        boolean hasTypeFilter = recordTypes != null && !recordTypes.isEmpty();
         boolean hasCursor = cursorCreatedAtValue != null && cursorRecordId != null;
+        boolean isDesc = effectiveSort == Sort.Direction.DESC;
         List<PersonalReadingRecord> entities;
-        if (hasCursor && hasTypeFilter) {
-            entities = personalReadingRecordRepository.findRecordsByCursorAndTypes(
-                    personalBookEntity.getId(),
-                    userEntity.getId(),
-                    recordTypes,
-                    cursorCreatedAtValue,
-                    cursorRecordId,
-                    PageRequest.of(0, pageSize + 1)
-            );
-        } else if (hasCursor) {
-            entities = personalReadingRecordRepository.findRecordsByCursor(
-                    personalBookEntity.getId(),
-                    userEntity.getId(),
-                    cursorCreatedAtValue,
-                    cursorRecordId,
-                    PageRequest.of(0, pageSize + 1)
-            );
-        } else if (hasTypeFilter) {
-            entities = personalReadingRecordRepository
-                    .findAllByPersonalBook_IdAndUserIdAndRecordTypeIn(
+        if (hasCursor) {
+            entities = isDesc
+                    ? personalReadingRecordRepository.findRecordsByCursor(
                             personalBookEntity.getId(),
                             userEntity.getId(),
-                            recordTypes,
-                            PageRequest.of(0, pageSize + 1, Sort.by(Sort.Direction.DESC, "createdAt", "id"))
-                    )
-                    .getContent();
+                            gatheringId,
+                            recordType,
+                            cursorCreatedAtValue,
+                            cursorRecordId,
+                            PageRequest.of(0, pageSize + 1))
+                    : personalReadingRecordRepository.findRecordsByCursorAsc(
+                            personalBookEntity.getId(),
+                            userEntity.getId(),
+                            gatheringId,
+                            recordType,
+                            cursorCreatedAtValue,
+                            cursorRecordId,
+                            PageRequest.of(0, pageSize + 1));
         } else {
             entities = personalReadingRecordRepository
-                    .findAllByPersonalBook_IdAndUserId(
+                    .findRecords(
                             personalBookEntity.getId(),
                             userEntity.getId(),
-                            PageRequest.of(0, pageSize + 1, Sort.by(Sort.Direction.DESC, "createdAt", "id"))
+                            gatheringId,
+                            recordType,
+                            PageRequest.of(0, pageSize + 1, Sort.by(effectiveSort, "createdAt", "id"))
                     )
                     .getContent();
         }
-        long totalCount = hasTypeFilter
-                ? personalReadingRecordRepository.countByPersonalBook_IdAndUserIdAndRecordTypeIn(
-                        personalBookEntity.getId(), userEntity.getId(), recordTypes)
-                : personalReadingRecordRepository.countByPersonalBook_IdAndUserId(
-                        personalBookEntity.getId(), userEntity.getId());
+        long totalCount = personalReadingRecordRepository.countRecords(
+                personalBookEntity.getId(), userEntity.getId(), gatheringId, recordType);
 
         boolean hasNext = entities.size() > pageSize;
         List<PersonalReadingRecord> pageEntities = hasNext ? entities.subList(0, pageSize) : entities;
