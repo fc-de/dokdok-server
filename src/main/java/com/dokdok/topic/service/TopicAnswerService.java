@@ -122,8 +122,10 @@ public class TopicAnswerService {
         meetingValidator.validateMeetingMember(meetingId, userId);
 
         Map<Long, String> contentsByTopicId = new LinkedHashMap<>();
-        for (TopicAnswerBulkSaveRequest.AnswerItem item : request.answers()) {
-            contentsByTopicId.put(item.topicId(), item.content());
+        if (request.answers() != null) {
+            for (TopicAnswerBulkSaveRequest.AnswerItem item : request.answers()) {
+                contentsByTopicId.put(item.topicId(), item.content());
+            }
         }
 
         List<Long> topicIds = List.copyOf(contentsByTopicId.keySet());
