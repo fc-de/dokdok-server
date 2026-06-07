@@ -13,6 +13,7 @@ import com.dokdok.book.entity.PersonalBook;
 import com.dokdok.book.exception.BookErrorCode;
 import com.dokdok.book.exception.BookException;
 import com.dokdok.book.repository.BookRepository;
+import com.dokdok.book.repository.BookReviewRepository;
 import com.dokdok.book.repository.PersonalBookListProjection;
 import com.dokdok.book.repository.PersonalBookRepository;
 import com.dokdok.global.util.SecurityUtil;
@@ -66,6 +67,9 @@ class PersonalBookServiceTest {
 
     @Mock
     private BookValidator bookValidator;
+
+    @Mock
+    private BookReviewRepository bookReviewRepository;
 
     private MockedStatic<SecurityUtil> securityUtilMock;
 
@@ -552,6 +556,7 @@ class PersonalBookServiceTest {
         securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
         when(userValidator.findUserOrThrow(userId)).thenReturn(user);
         when(bookValidator.validateInBookShelf(userId, bookId)).thenReturn(personalBook);
+        when(bookReviewRepository.findByBookIdAndUserId(bookId, userId)).thenReturn(Optional.empty());
 
         // when
         personalBookService.deleteBook(bookId);
@@ -625,6 +630,8 @@ class PersonalBookServiceTest {
         when(userValidator.findUserOrThrow(userId)).thenReturn(user);
         when(bookValidator.validateInBookShelf(userId, 10L)).thenReturn(firstPersonalBook);
         when(bookValidator.validateInBookShelf(userId, 11L)).thenReturn(secondPersonalBook);
+        when(bookReviewRepository.findByBookIdAndUserId(10L, userId)).thenReturn(Optional.empty());
+        when(bookReviewRepository.findByBookIdAndUserId(11L, userId)).thenReturn(Optional.empty());
 
         // when
         personalBookService.deleteBooks(bookIds);
@@ -662,6 +669,7 @@ class PersonalBookServiceTest {
         securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
         when(userValidator.findUserOrThrow(userId)).thenReturn(user);
         when(bookValidator.validateInBookShelf(userId, 10L)).thenReturn(personalBook);
+        when(bookReviewRepository.findByBookIdAndUserId(10L, userId)).thenReturn(Optional.empty());
 
         // when
         personalBookService.deleteBooks(bookIds);
