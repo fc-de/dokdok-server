@@ -2,6 +2,8 @@ package com.dokdok.retrospective.service;
 
 import com.dokdok.book.service.BookValidator;
 import com.dokdok.global.response.CursorResponse;
+import com.dokdok.meeting.exception.MeetingErrorCode;
+import com.dokdok.meeting.exception.MeetingException;
 import com.dokdok.retrospective.dto.projection.ChangedThoughtProjection;
 import com.dokdok.retrospective.dto.projection.FreeTextProjection;
 import com.dokdok.retrospective.dto.projection.OtherPerspectiveProjection;
@@ -68,6 +70,7 @@ public class PersonalRetrospectiveService {
 
         Meeting meeting = meetingValidator.findMeetingOrThrow(meetingId);
         User user = userValidator.findUserOrThrow(userId);
+        meetingValidator.validateMeetingMember(meetingId, userId);
 
         retrospectiveValidator.validateRetrospective(meetingId, userId);
 
@@ -334,7 +337,10 @@ public class PersonalRetrospectiveService {
                 Optional<Topic> topic = Optional.ofNullable(perspective.topicId())
                         .flatMap(topicRepository::findById);
 
-                MeetingMember meetingMember = meetingValidator.getMeetingMember(meetingId, perspective.meetingMemberId());
+                // 수정 (MeetingMember PK로 직접 조회 + meeting 소속 검증)
+                MeetingMember meetingMember = meetingMemberRepository.findById(perspective.meetingMemberId())
+                        .filter(mm -> mm.getMeeting().getId().equals(meetingId))
+                        .orElseThrow(() -> new MeetingException(MeetingErrorCode.NOT_MEETING_MEMBER));
 
                 RetrospectiveOthersPerspective othersPerspective = RetrospectiveOthersPerspective.create(
                         retrospective,
