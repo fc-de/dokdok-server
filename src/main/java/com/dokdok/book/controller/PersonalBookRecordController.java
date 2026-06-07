@@ -11,13 +11,13 @@ import com.dokdok.book.service.ReadingTimelineService;
 import com.dokdok.global.response.CursorResponse;
 import com.dokdok.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -52,15 +52,17 @@ public class PersonalBookRecordController implements PersonalBookRecordApi {
     @GetMapping("/{personalBookId}/records")
     public ResponseEntity<ApiResponse<CursorPageResponse<PersonalReadingRecordListResponse, ReadingRecordCursor>>> getMyReadingRecords(
             @PathVariable Long personalBookId,
-            @RequestParam(required = false) List<RecordType> recordTypes,
+            @RequestParam(required = false) Long gatheringId,
+            @RequestParam(required = false) RecordType recordType,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             OffsetDateTime cursorCreatedAt,
             @RequestParam(required = false) Long cursorRecordId,
-            @RequestParam(required = false) Integer size
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false, defaultValue = "DESC") Sort.Direction sort
     ) {
         CursorPageResponse<PersonalReadingRecordListResponse, ReadingRecordCursor> response =
-                personalReadingRecordService.getRecords(personalBookId, recordTypes, cursorCreatedAt, cursorRecordId, size);
+                personalReadingRecordService.getRecords(personalBookId, gatheringId, recordType, cursorCreatedAt, cursorRecordId, size, sort);
         return ApiResponse.success(response, "기록 조회 성공");
 
     }

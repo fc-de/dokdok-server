@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Tag(name = "독서 기록", description = "책별 독서 기록 관련 API")
 @RequestMapping("/api/book")
@@ -436,7 +436,9 @@ public interface PersonalBookRecordApi {
                     내 책장에 있는 책의 독서 기록을 조회합니다.
                     - 경로의 personalBookId로 책을 지정합니다.
                     - 로그인한 사용자 기준으로 본인 책의 기록만 조회됩니다.
-                    - recordTypes 파라미터로 기록 유형(MEMO/QUOTE)을 복수 필터링할 수 있습니다. 미전달 시 전체 조회됩니다.
+                    - gatheringId 파라미터로 모임별 필터링할 수 있습니다. 미전달 시 전체 조회됩니다.
+                    - recordType 파라미터로 기록 유형(MEMO/QUOTE)을 필터링할 수 있습니다. 미전달 시 전체 조회됩니다.
+                    - sort 파라미터로 정렬 기준을 지정합니다. DESC(최신순, 기본값) / ASC(오래된순)
                     - cursorCreatedAt/cursorRecordId/size 파라미터로 다음 페이지를 조회합니다.
                     """
     )
@@ -533,8 +535,10 @@ public interface PersonalBookRecordApi {
     ResponseEntity<ApiResponse<CursorPageResponse<PersonalReadingRecordListResponse, ReadingRecordCursor>>> getMyReadingRecords(
             @Parameter(description = "개인 책장 ID (personal_book 테이블 PK)", required = true, example = "10")
             @PathVariable Long personalBookId,
-            @Parameter(description = "기록 유형 필터 (MEMO | QUOTE). 복수 전달 가능. 미전달 시 전체 조회", example = "MEMO")
-            @RequestParam(required = false) List<RecordType> recordTypes,
+            @Parameter(description = "모임 ID 필터 (gathering 테이블 PK). 미전달 시 전체 조회", example = "3")
+            @RequestParam(required = false) Long gatheringId,
+            @Parameter(description = "기록 유형 필터 (MEMO | QUOTE). 미전달 시 전체 조회", example = "MEMO")
+            @RequestParam(required = false) RecordType recordType,
             @Parameter(
                     description = "커서 - 마지막 아이템 createdAt (ISO 8601, cursorRecordId와 함께 전달)",
                     example = ""
@@ -545,7 +549,12 @@ public interface PersonalBookRecordApi {
             @Parameter(description = "커서 - 마지막 아이템 recordId (cursorCreatedAt과 함께 전달)", example = "5")
             @RequestParam(required = false) Long cursorRecordId,
             @Parameter(description = "한 페이지당 아이템 수", example = "10")
-            @RequestParam(required = false) Integer size
+            @RequestParam(required = false) Integer size,
+            @Parameter(
+                    description = "정렬 기준. DESC: 최신순(기본값), ASC: 오래된순",
+                    schema = @Schema(allowableValues = {"DESC", "ASC"}, defaultValue = "DESC")
+            )
+            @RequestParam(required = false, defaultValue = "DESC") Sort.Direction sort
     );
 
     @Operation(
