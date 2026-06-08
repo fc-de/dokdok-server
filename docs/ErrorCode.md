@@ -135,6 +135,7 @@
 | M021 | MEETING_JOIN_TIME_CONFLICT | 동일 시간대의 다른 약속에 이미 참가 중입니다. | 400 |
 | M022 | MEETING_CREATE_NOT_ALLOWED | 약속 시작 24시간 이내의 일정은 신청할 수 없습니다. | 400 |
 | M023 | MEETING_CONFIRM_NOT_ALLOWED | 약속 시작 24시간 이내의 일정은 승인할 수 없습니다. | 400 |
+| M024 | MEETING_CONFIRM_TIME_CONFLICT | 모임 내 같은 시간대에 이미 확정된 약속이 있어 승인할 수 없습니다. | 400 |
 
 ---
 
