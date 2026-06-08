@@ -432,13 +432,18 @@ class MeetingServiceTest {
 
         User user = User.builder()
                 .id(userId)
+                .nickname("member")
+                .build();
+
+        User leader = User.builder()
+                .id(99L)
                 .nickname("leader")
                 .build();
 
         Gathering gathering = Gathering.builder()
                 .id(gatheringId)
                 .gatheringName("gathering")
-                .gatheringLeader(user)
+                .gatheringLeader(leader)
                 .invitationLink("link")
                 .build();
 
@@ -487,6 +492,103 @@ class MeetingServiceTest {
             assertThat(response.schedule().startDateTime()).isEqualTo(startDate);
             assertThat(response.schedule().endDateTime()).isEqualTo(endDate);
             assertThat(response.participants().maxCount()).isEqualTo(memberCount);
+        }
+    }
+
+    @DisplayName("모임장이 약속을 생성하면 별도 승인 없이 자동으로 확정된다.")
+    @Test
+    void givenLeaderCreateRequest_whenCreateMeeting_thenAutoConfirmed() {
+        // given
+        Long gatheringId = 3L;
+        Long leaderId = 7L;
+        String title = "book";
+        String authors = "author";
+        String publisher = "publisher";
+        String isbn = "9781234567890";
+        String thumbnail = "https://example.com/thumb.jpg";
+        MeetingCreateRequest.BookInfo bookInfo = new MeetingCreateRequest.BookInfo(
+                title, authors, publisher, isbn, thumbnail
+        );
+        LocalDateTime startDate = LocalDateTime.now().plusDays(3);
+        LocalDateTime endDate = startDate.plusHours(2);
+        int memberCount = 5;
+        MeetingCreateRequest request = MeetingCreateRequest.builder()
+                .gatheringId(gatheringId)
+                .book(bookInfo)
+                .meetingName(null)
+                .meetingStartDate(startDate)
+                .meetingEndDate(endDate)
+                .maxParticipants(null)
+                .build();
+
+        User leader = User.builder()
+                .id(leaderId)
+                .nickname("leader")
+                .build();
+
+        Gathering gathering = Gathering.builder()
+                .id(gatheringId)
+                .gatheringName("gathering")
+                .gatheringLeader(leader)
+                .invitationLink("link")
+                .build();
+
+        Book book = Book.builder()
+                .id(12L)
+                .bookName(title)
+                .author(authors)
+                .publisher(publisher)
+                .isbn(isbn)
+                .thumbnail(thumbnail)
+                .build();
+
+        Meeting savedMeeting = Meeting.builder()
+                .id(25L)
+                .gathering(gathering)
+                .book(book)
+                .meetingLeader(leader)
+                .meetingName(book.getBookName())
+                .meetingStatus(MeetingStatus.PENDING)
+                .maxParticipants(memberCount)
+                .meetingStartDate(startDate)
+                .meetingEndDate(endDate)
+                .build();
+
+        given(gatheringRepository.findById(gatheringId))
+                .willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.countByGatheringIdAndRemovedAtIsNull(gatheringId))
+                .willReturn(memberCount);
+        given(bookRepository.findByIsbn(isbn))
+                .willReturn(Optional.of(book));
+        given(userValidator.findUserOrThrow(leaderId))
+                .willReturn(leader);
+        given(meetingRepository.save(any(Meeting.class)))
+                .willReturn(savedMeeting);
+        given(meetingRepository.existsOverlappingMeeting(
+                gathering.getId(),
+                MeetingStatus.CONFIRMED,
+                savedMeeting.getId(),
+                savedMeeting.getMeetingStartDate(),
+                savedMeeting.getMeetingEndDate()
+        ))
+                .willReturn(false);
+        given(meetingMemberRepository.findByMeetingIdAndUserId(savedMeeting.getId(), leaderId))
+                .willReturn(Optional.empty());
+
+        try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
+            securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(leaderId);
+
+            // when
+            MeetingResponse response = meetingService.createMeeting(request);
+
+            // then
+            assertThat(response.meetingStatus()).isEqualTo(MeetingStatus.CONFIRMED);
+            ArgumentCaptor<MeetingMember> meetingMemberCaptor = ArgumentCaptor.forClass(MeetingMember.class);
+            verify(meetingMemberRepository).save(meetingMemberCaptor.capture());
+            MeetingMember savedMember = meetingMemberCaptor.getValue();
+            assertThat(savedMember.getUser().getId()).isEqualTo(leaderId);
+            assertThat(savedMember.getMeetingRole()).isEqualTo(MeetingMemberRole.LEADER);
+            verify(topicService).createDefaultTopic(savedMeeting);
         }
     }
 

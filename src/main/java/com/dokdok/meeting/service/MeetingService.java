@@ -195,7 +195,37 @@ public class MeetingService {
         Meeting meeting = Meeting.create(request, gathering, book, user, maxParticipants);
         Meeting savedMeeting = meetingRepository.save(meeting);
 
+        // 모임장이 약속을 생성한 경우 별도 승인 없이 자동으로 확정한다.
+        if (isGatheringLeader(gathering, userId)) {
+            autoConfirmMeeting(savedMeeting, gathering);
+            List<MeetingMember> members = meetingMemberRepository
+                    .findByMeetingIdAndUserId(savedMeeting.getId(), userId)
+                    .map(List::of)
+                    .orElseGet(List::of);
+            return MeetingResponse.from(savedMeeting, members);
+        }
+
         return MeetingResponse.from(savedMeeting, List.of());
+    }
+
+    /**
+     * 약속 생성자가 모임장인지 확인한다.
+     */
+    private boolean isGatheringLeader(Gathering gathering, Long userId) {
+        User leader = gathering.getGatheringLeader();
+        return leader != null && leader.getId().equals(userId);
+    }
+
+    /**
+     * 모임장이 생성한 약속을 자동으로 확정한다. 수동 확정(confirmMeeting)과 동일한 처리를 수행한다.
+     */
+    private void autoConfirmMeeting(Meeting meeting, Gathering gathering) {
+        validateConfirmable(meeting);
+        ensureLeaderMember(meeting);
+
+        meeting.changeStatus(MeetingStatus.CONFIRMED);
+        saveMeetingBookForUser(meeting, gathering, meeting.getMeetingLeader().getId());
+        topicService.createDefaultTopic(meeting);
     }
 
     /**
