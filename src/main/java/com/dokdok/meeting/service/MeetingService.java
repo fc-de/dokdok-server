@@ -314,8 +314,7 @@ public class MeetingService {
                 endDate
         );
         if (hasOverlappingMeeting) {
-            throw new MeetingException(MeetingErrorCode.INVALID_MEETING_STATUS_CHANGE,
-                    "동일 시간에 확정된 약속이 존재합니다.");
+            throw new MeetingException(MeetingErrorCode.MEETING_CONFIRM_TIME_CONFLICT);
         }
     }
 

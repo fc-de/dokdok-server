@@ -794,7 +794,7 @@ class MeetingServiceTest {
             assertThatThrownBy(() -> meetingService.confirmMeeting(meetingId))
                     .isInstanceOf(MeetingException.class)
                     .extracting("errorCode")
-                    .isEqualTo(MeetingErrorCode.INVALID_MEETING_STATUS_CHANGE);
+                    .isEqualTo(MeetingErrorCode.MEETING_CONFIRM_TIME_CONFLICT);
         }
     }
 
