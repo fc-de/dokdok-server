@@ -199,21 +199,27 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
 
     @Query(
             value = """
-                    SELECT m FROM MeetingMember mm
-                    JOIN mm.meeting m
+                    SELECT m FROM Meeting m
                     JOIN FETCH m.book
-                    WHERE mm.user.id = :userId
-                    AND mm.canceledAt IS NULL
-                    AND m.gathering.id = :gatheringId
+                    WHERE m.gathering.id = :gatheringId
                     AND m.meetingStatus = :meetingStatus
+                    AND EXISTS (
+                        SELECT 1 FROM MeetingMember mm
+                        WHERE mm.meeting = m
+                        AND mm.user.id = :userId
+                        AND mm.canceledAt IS NULL
+                    )
                     """,
             countQuery = """
-                    SELECT count(mm) FROM MeetingMember mm
-                    JOIN mm.meeting m
-                    WHERE mm.user.id = :userId
-                    AND mm.canceledAt IS NULL
-                    AND m.gathering.id = :gatheringId
+                    SELECT count(m) FROM Meeting m
+                    WHERE m.gathering.id = :gatheringId
                     AND m.meetingStatus = :meetingStatus
+                    AND EXISTS (
+                        SELECT 1 FROM MeetingMember mm
+                        WHERE mm.meeting = m
+                        AND mm.user.id = :userId
+                        AND mm.canceledAt IS NULL
+                    )
                     """
     )
     Page<Meeting> findMeetingsByUserIdAndStatus(
