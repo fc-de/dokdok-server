@@ -48,6 +48,7 @@ public class ReadingTimelineRepository {
                       AND prr.user_id = :userId
                       AND prr.deleted_at IS NULL
                       AND (CAST(:recordType AS text) IS NULL OR prr.record_type = :recordType)
+                      AND CAST(:gatheringId AS bigint) IS NULL
 
                     UNION ALL
 
