@@ -19,9 +19,11 @@ public interface PersonalReadingRecordRepository extends JpaRepository<PersonalR
     @Query("""
             select record
             from PersonalReadingRecord record
-            where record.personalBook.id = :personalBookId
+            join record.personalBook pb
+            left join pb.gathering g
+            where pb.id = :personalBookId
                 and record.user.id = :userId
-                and (:gatheringId is null or record.personalBook.gathering.id = :gatheringId)
+                and (:gatheringId is null or g.id = :gatheringId)
                 and (:recordType is null or record.recordType = :recordType)
             """)
     Page<PersonalReadingRecord> findRecords(
@@ -35,9 +37,11 @@ public interface PersonalReadingRecordRepository extends JpaRepository<PersonalR
     @Query("""
             select count(record)
             from PersonalReadingRecord record
-            where record.personalBook.id = :personalBookId
+            join record.personalBook pb
+            left join pb.gathering g
+            where pb.id = :personalBookId
                 and record.user.id = :userId
-                and (:gatheringId is null or record.personalBook.gathering.id = :gatheringId)
+                and (:gatheringId is null or g.id = :gatheringId)
                 and (:recordType is null or record.recordType = :recordType)
             """)
     long countRecords(
@@ -50,9 +54,11 @@ public interface PersonalReadingRecordRepository extends JpaRepository<PersonalR
     @Query("""
             select record
             from PersonalReadingRecord record
-            where record.personalBook.id = :personalBookId
+            join record.personalBook pb
+            left join pb.gathering g
+            where pb.id = :personalBookId
                 and record.user.id = :userId
-                and (:gatheringId is null or record.personalBook.gathering.id = :gatheringId)
+                and (:gatheringId is null or g.id = :gatheringId)
                 and (:recordType is null or record.recordType = :recordType)
                 and (
                     :cursorCreatedAt is null
@@ -74,9 +80,11 @@ public interface PersonalReadingRecordRepository extends JpaRepository<PersonalR
     @Query("""
             select record
             from PersonalReadingRecord record
-            where record.personalBook.id = :personalBookId
+            join record.personalBook pb
+            left join pb.gathering g
+            where pb.id = :personalBookId
                 and record.user.id = :userId
-                and (:gatheringId is null or record.personalBook.gathering.id = :gatheringId)
+                and (:gatheringId is null or g.id = :gatheringId)
                 and (:recordType is null or record.recordType = :recordType)
                 and (
                     :cursorCreatedAt is null
