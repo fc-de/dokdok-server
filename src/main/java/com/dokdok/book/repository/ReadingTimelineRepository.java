@@ -63,6 +63,7 @@ public class ReadingTimelineRepository {
                       AND m.deleted_at IS NULL
                       AND m.book_id = :bookId
                       AND (CAST(:gatheringId AS bigint) IS NULL OR m.gathering_id = :gatheringId)
+                      AND CAST(:recordType AS text) IS NULL
 
                     UNION ALL
 
@@ -77,6 +78,7 @@ public class ReadingTimelineRepository {
                       AND m.retrospective_published = true
                       AND m.retrospective_published_at IS NOT NULL
                       AND (CAST(:gatheringId AS bigint) IS NULL OR m.gathering_id = :gatheringId)
+                      AND CAST(:recordType AS text) IS NULL
 
                     UNION ALL
 
@@ -104,6 +106,7 @@ public class ReadingTimelineRepository {
                         WHERE m.deleted_at IS NULL
                           AND m.book_id = :bookId
                           AND (CAST(:gatheringId AS bigint) IS NULL OR m.gathering_id = :gatheringId)
+                          AND CAST(:recordType AS text) IS NULL
                         GROUP BY m.meeting_id, m.meeting_start_date
                     ) pre
                 )
