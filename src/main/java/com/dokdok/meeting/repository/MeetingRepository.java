@@ -184,12 +184,12 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
     List<Meeting> findByIdInWithGathering(@Param("meetingIds") List<Long> meetingIds);
 
     @Query("""
-            SELECT DISTINCT m.book
+            SELECT DISTINCT b
             FROM Meeting m
+            JOIN m.book b
             WHERE m.gathering.id = :gatheringId
             AND m.meetingStatus IN :meetingStatuses
-            AND m.book IS NOT NULL
-            ORDER BY m.book.id ASC
+            ORDER BY b.id ASC
             """)
     Page<com.dokdok.book.entity.Book> findDistinctBooksByGatheringIdAndStatuses(
             @Param("gatheringId") Long gatheringId,
