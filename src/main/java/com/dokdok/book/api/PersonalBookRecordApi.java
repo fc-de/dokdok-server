@@ -3,6 +3,7 @@ package com.dokdok.book.api;
 import com.dokdok.book.dto.request.PersonalReadingRecordCreateRequest;
 import com.dokdok.book.dto.request.PersonalReadingRecordUpdateRequest;
 import com.dokdok.book.dto.request.PreOpinionTimeType;
+import com.dokdok.book.dto.request.TimelineSortType;
 import com.dokdok.book.dto.response.*;
 import com.dokdok.book.entity.RecordType;
 import com.dokdok.global.response.ApiResponse;
@@ -628,11 +629,12 @@ public interface PersonalBookRecordApi {
             summary = "독서 타임라인 조회 (developer: 권우희)",
             description = """
                     독서 기록/사전 의견/개인 회고/공동 회고를 하나의 타임라인으로 커서 기반 조회합니다.
-                    - personalBook의 gatheringId가 null이면 사전 의견/회고는 제외됩니다.
                     - 사전 의견(PRE_OPINION)은 **내 답변이 있는 미팅만** 포함합니다.
                     - PRE_OPINION의 preOpinion 객체에는 gatheringId/meetingId가 포함됩니다.
-                    - 정렬: eventAt DESC, typeOrder DESC, sourceId DESC
                     - preOpinionTime: 사전 의견 정렬 기준 (MEETING_START | ANSWER_CREATED, 기본값 ANSWER_CREATED)
+                    - gatheringId: 미전달 시 전체 조회, 전달 시 해당 모임의 항목만 조회
+                    - recordType: 미전달 시 전체 조회, MEMO/QUOTE 전달 시 독서 기록 유형 필터 (회고/사전의견은 영향 없음)
+                    - sort: DESC(최신순, 기본값) / ASC(오래된순)
 
                     **사용 방법**
                     - 첫 페이지: `?size=10&preOpinionTime=ANSWER_CREATED`
@@ -688,6 +690,12 @@ public interface PersonalBookRecordApi {
             @Parameter(description = "한 페이지당 아이템 수", example = "10")
             @RequestParam(required = false) Integer size,
             @Parameter(description = "사전 의견 정렬 기준 (MEETING_START | ANSWER_CREATED)", example = "ANSWER_CREATED")
-            @RequestParam(required = false, defaultValue = "ANSWER_CREATED") PreOpinionTimeType preOpinionTime
+            @RequestParam(required = false, defaultValue = "ANSWER_CREATED") PreOpinionTimeType preOpinionTime,
+            @Parameter(description = "모임 ID 필터 (미전달 시 전체 조회)")
+            @RequestParam(required = false) Long gatheringId,
+            @Parameter(description = "독서 기록 유형 필터 (MEMO | QUOTE, 미전달 시 전체 조회)")
+            @RequestParam(required = false) RecordType recordType,
+            @Parameter(description = "정렬 기준 (DESC: 최신순, ASC: 오래된순)", example = "DESC")
+            @RequestParam(required = false, defaultValue = "DESC") TimelineSortType sort
     );
 }

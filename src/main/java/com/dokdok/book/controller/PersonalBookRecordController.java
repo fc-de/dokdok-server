@@ -4,6 +4,7 @@ import com.dokdok.book.api.PersonalBookRecordApi;
 import com.dokdok.book.dto.request.PersonalReadingRecordCreateRequest;
 import com.dokdok.book.dto.request.PersonalReadingRecordUpdateRequest;
 import com.dokdok.book.dto.request.PreOpinionTimeType;
+import com.dokdok.book.dto.request.TimelineSortType;
 import com.dokdok.book.dto.response.*;
 import com.dokdok.book.entity.RecordType;
 import com.dokdok.book.service.PersonalReadingRecordService;
@@ -86,7 +87,10 @@ public class PersonalBookRecordController implements PersonalBookRecordApi {
             @RequestParam(required = false) ReadingTimelineType cursorType,
             @RequestParam(required = false) Long cursorSourceId,
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false, defaultValue = "ANSWER_CREATED") PreOpinionTimeType preOpinionTime
+            @RequestParam(required = false, defaultValue = "ANSWER_CREATED") PreOpinionTimeType preOpinionTime,
+            @RequestParam(required = false) Long gatheringId,
+            @RequestParam(required = false) RecordType recordType,
+            @RequestParam(required = false, defaultValue = "DESC") TimelineSortType sort
     ) {
         CursorResponse<ReadingTimelineItem, ReadingTimelineCursor> response =
                 readingTimelineService.getTimeline(
@@ -95,7 +99,10 @@ public class PersonalBookRecordController implements PersonalBookRecordApi {
                         cursorType,
                         cursorSourceId,
                         size,
-                        preOpinionTime
+                        preOpinionTime,
+                        gatheringId,
+                        recordType,
+                        sort
                 );
         return ApiResponse.success(response, "독서 타임라인 조회 성공");
     }
