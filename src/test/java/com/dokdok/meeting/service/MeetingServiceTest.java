@@ -1871,7 +1871,7 @@ class MeetingServiceTest {
         }
     }
 
-    @DisplayName("내 약속 탭 카운트를 조회하면 전체/다가오는/완료 카운트를 반환한다.")
+    @DisplayName("내 약속 탭 카운트를 조회하면 전체/다가오는/완료 카운트를 반환한다. (다가오는 = 3일 이내 확정 약속, 리스트와 동일 기준)")
     @Test
     void givenUser_whenGetMyMeetingTabCounts_thenReturnCounts() {
         // given
@@ -1880,9 +1880,12 @@ class MeetingServiceTest {
                 userId,
                 List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE)
         )).willReturn(5);
-        given(meetingMemberRepository.countMyMeetingsByStatus(
-                userId,
-                MeetingStatus.CONFIRMED
+        // 다가오는 탭 카운트는 리스트와 동일하게 now ~ now+3일 범위의 확정 약속만 세야 한다.
+        given(meetingMemberRepository.countMyUpcomingMeetings(
+                eq(userId),
+                eq(MeetingStatus.CONFIRMED),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class)
         )).willReturn(2);
         given(meetingMemberRepository.countMyMeetingsByStatusWithoutPersonalRetrospective(
                 userId,
