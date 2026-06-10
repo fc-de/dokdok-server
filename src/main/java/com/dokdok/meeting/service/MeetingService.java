@@ -824,14 +824,18 @@ public class MeetingService {
     @Transactional(readOnly = true)
     public MyMeetingTabCountsResponse getMyMeetingTabCounts() {
         Long userId = SecurityUtil.getCurrentUserId();
+        LocalDateTime now = LocalDateTime.now();
 
         int allCount = meetingMemberRepository.countMyMeetingsByStatuses(
                 userId,
                 List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE)
         );
-        int upcomingCount = meetingMemberRepository.countMyMeetingsByStatus(
+        // 다가오는 약속 = 3일 이내 시작하는 확정 약속. 리스트(getMyMeetingList UPCOMING)와 동일 기준이어야 한다.
+        int upcomingCount = meetingMemberRepository.countMyUpcomingMeetings(
                 userId,
-                MeetingStatus.CONFIRMED
+                MeetingStatus.CONFIRMED,
+                now,
+                now.plusDays(3)
         );
         int doneCount = meetingMemberRepository.countMyMeetingsByStatusWithoutPersonalRetrospective(
                 userId,
