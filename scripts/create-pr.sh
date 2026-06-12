@@ -430,7 +430,7 @@ ${CHECKBOX_CHORE}
 ---
 
 ## 이슈 번호
-- #${ISSUE_NUMBER}
+- Closes #${ISSUE_NUMBER}
 
 ---
 
@@ -461,10 +461,22 @@ EOF
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "$PR_TITLE" > "${SCRIPT_DIR}/PR_TITLE.txt"
-echo "$PR_BODY" > "${SCRIPT_DIR}/PR_BODY.md"
-
 print_success "PR 제목이 scripts/PR_TITLE.txt에 저장되었습니다."
-print_success "PR 본문이 scripts/PR_BODY.md에 저장되었습니다."
+
+# ============================================
+# PR 본문: 사용자가 직접 작성한 내용을 사용 (2단계)
+# ============================================
+#   1) scripts/PR_BODY.md 가 없으면 → 자동 생성 본문을 '초안'으로 저장하고 종료한다.
+#      사용자가 내용을 다듬은 뒤 같은 명령어로 다시 실행하면 그 본문으로 PR을 생성한다.
+#   2) scripts/PR_BODY.md 가 있으면 → 그 내용을 그대로 사용해 PR을 생성한다.
+if [ ! -s "${SCRIPT_DIR}/PR_BODY.md" ]; then
+    echo "$PR_BODY" > "${SCRIPT_DIR}/PR_BODY.md"
+    print_warning "PR 본문 초안을 scripts/PR_BODY.md에 생성했습니다."
+    print_info "내용을 직접 작성/수정한 뒤, 같은 명령어로 스크립트를 다시 실행하면 PR이 생성됩니다."
+    exit 0
+fi
+
+print_success "작성된 scripts/PR_BODY.md를 그대로 사용해 PR을 생성합니다."
 
 # ============================================
 # PR 생성
@@ -481,6 +493,10 @@ if command -v gh &> /dev/null; then
         --title "$PR_TITLE" \
         --body-file "${SCRIPT_DIR}/PR_BODY.md"; then
         print_success "PR이 성공적으로 생성되었습니다!"
+        # 다음 PR 작성 시 이전 본문이 그대로 재사용되지 않도록 정리한다.
+        # (작성한 본문은 이미 생성된 PR에 반영되어 있다.)
+        rm -f "${SCRIPT_DIR}/PR_BODY.md"
+        print_info "scripts/PR_BODY.md를 정리했습니다. (다음 PR은 새 초안부터 시작)"
     else
         print_error "PR 생성에 실패했습니다."
         exit 1
