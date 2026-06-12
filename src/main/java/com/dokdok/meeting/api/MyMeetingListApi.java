@@ -63,7 +63,9 @@ public interface MyMeetingListApi {
                                             "meetingStatus": "CONFIRMED",
                                             "myRole": "LEADER",
                                             "progressStatus": "UPCOMING",
-                                            "preOpinionTemplateConfirmed": true
+                                            "preOpinionTemplateConfirmed": true,
+                                            "hasPreOpinion": true,
+                                            "hasPersonalRetrospective": false
                                           }
                                         ],
                                         "totalCount": 8,
