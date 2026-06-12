@@ -110,6 +110,11 @@ public class GatheringService {
             }
         }
 
+        // 강퇴 이력이 있으면 재가입 불가 (강퇴 시 removed_at이 설정되어 위 활성 멤버 조회에서는 보이지 않음)
+        if (gatheringMemberRepository.existsRemovedMember(gathering.getId(), user.getId())) {
+            throw new GatheringException(GatheringErrorCode.REMOVED_MEMBER_CANNOT_REJOIN);
+        }
+
         GatheringMember member = saveGatheringMember(gathering, user, GatheringRole.MEMBER, GatheringMemberStatus.PENDING, null);
         return GatheringJoinResponse.from(member);
     }
