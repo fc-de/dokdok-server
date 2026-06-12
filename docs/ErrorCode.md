@@ -105,6 +105,7 @@
 | GA011 | NOT_PENDING_STATUS | 대기 중인 가입 요청만 처리할 수 있습니다. | 400 |
 | GA012 | INVALID_APPROVE_TYPE | 승인 상태는 ACTIVE 또는 REJECTED만 가능합니다. | 400 |
 | GA013 | FAVORITE_LIMIT_EXCEEDED | 즐겨찾기는 최대 4개까지만 등록할 수 있습니다. | 400 |
+| GA014 | REMOVED_MEMBER_CANNOT_REJOIN | 강퇴된 모임에는 재가입할 수 없습니다. | 403 |
 
 ---
 

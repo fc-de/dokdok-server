@@ -1105,6 +1105,32 @@ class GatheringServiceTest {
 	}
 
 	@Test
+	@DisplayName("모임 가입 실패 - 강퇴된 사용자는 재가입할 수 없음")
+	void joinGathering_Fail_RemovedMemberCannotRejoin() {
+		// given
+		String invitationLink = "https://invite.link/abc123";
+
+		securityUtilMock.when(SecurityUtil::getCurrentUserEntity).thenReturn(newUser);
+
+		given(gatheringValidator.validateInvitationLink(invitationLink)).willReturn(gathering1);
+		// 강퇴 시 removed_at이 설정되어 활성 멤버 조회에는 잡히지 않음
+		given(gatheringMemberRepository.findByGatheringIdAndUserId(1L, 3L))
+				.willReturn(Optional.empty());
+		// 강퇴 이력 존재
+		given(gatheringMemberRepository.existsRemovedMember(1L, 3L))
+				.willReturn(true);
+
+		// when & then
+		assertThatThrownBy(() -> gatheringService.joinGathering(invitationLink))
+				.isInstanceOf(GatheringException.class)
+				.hasMessage(GatheringErrorCode.REMOVED_MEMBER_CANNOT_REJOIN.getMessage());
+
+		securityUtilMock.verify(SecurityUtil::getCurrentUserEntity, times(1));
+		verify(gatheringValidator, times(1)).validateInvitationLink(invitationLink);
+		verify(gatheringMemberRepository, times(0)).save(any());
+	}
+
+	@Test
 	@DisplayName("가입 요청 승인 성공 - 리더가 PENDING 멤버를 ACTIVE로 승인")
 	void handleJoinRequest_Success_Approve() {
 		// given
