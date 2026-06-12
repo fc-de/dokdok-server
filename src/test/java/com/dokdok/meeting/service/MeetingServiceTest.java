@@ -1871,6 +1871,70 @@ class MeetingServiceTest {
         }
     }
 
+    @DisplayName("내 약속 리스트 조회 시 사전 의견/개인 회고 작성 완료 여부를 약속별로 반환한다.")
+    @Test
+    void givenWriteStatus_whenGetMyMeetingList_thenReturnHasPreOpinionAndRetrospective() {
+        // given
+        Long userId = 55L;
+        int size = 4;
+        Meeting written = Meeting.builder()
+                .id(1L)
+                .meetingName("written")
+                .meetingStatus(MeetingStatus.DONE)
+                .meetingLeader(leader)
+                .gathering(gathering)
+                .book(Book.builder().id(1L).bookName("book1").build())
+                .build();
+        Meeting notWritten = Meeting.builder()
+                .id(2L)
+                .meetingName("notWritten")
+                .meetingStatus(MeetingStatus.DONE)
+                .meetingLeader(leader)
+                .gathering(gathering)
+                .book(Book.builder().id(2L).bookName("book2").build())
+                .build();
+
+        given(meetingMemberRepository.findMyMeetingsByStatusesAfterCursor(
+                eq(userId),
+                eq(List.of(MeetingStatus.CONFIRMED, MeetingStatus.DONE)),
+                any(),
+                any(),
+                any()
+        )).willReturn(List.of(written, notWritten));
+        given(topicRepository.findMeetingIdsWithConfirmedTopics(List.of(1L, 2L)))
+                .willReturn(List.of());
+        // 1번 약속만 사전 의견 제출 완료
+        given(topicAnswerRepository.findMeetingIdsWithSubmittedAnswers(List.of(1L, 2L), userId))
+                .willReturn(List.of(1L));
+        // 1번 약속만 개인 회고 작성 완료
+        given(personalRetrospectiveRepository.findMeetingIdsWithRetrospective(List.of(1L, 2L), userId))
+                .willReturn(List.of(1L));
+
+        try (MockedStatic<SecurityUtil> mock = mockStatic(SecurityUtil.class)) {
+            mock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
+
+            // when
+            CursorResponse<MyMeetingListItemResponse, MeetingListCursor> response =
+                    meetingService.getMyMeetingList(null, size, null);
+
+            // then
+            assertThat(response.items()).hasSize(2);
+            MyMeetingListItemResponse writtenItem = response.items().stream()
+                    .filter(item -> item.meetingId().equals(1L))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(writtenItem.hasPreOpinion()).isTrue();
+            assertThat(writtenItem.hasPersonalRetrospective()).isTrue();
+
+            MyMeetingListItemResponse notWrittenItem = response.items().stream()
+                    .filter(item -> item.meetingId().equals(2L))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(notWrittenItem.hasPreOpinion()).isFalse();
+            assertThat(notWrittenItem.hasPersonalRetrospective()).isFalse();
+        }
+    }
+
     @DisplayName("내 약속 탭 카운트를 조회하면 전체/다가오는/완료 카운트를 반환한다. (다가오는 = 3일 이내 확정 약속, 리스트와 동일 기준)")
     @Test
     void givenUser_whenGetMyMeetingTabCounts_thenReturnCounts() {

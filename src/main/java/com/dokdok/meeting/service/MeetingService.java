@@ -1023,6 +1023,12 @@ public class MeetingService {
         Set<Long> meetingIdsWithConfirmedTopics = new HashSet<>(
                 topicRepository.findMeetingIdsWithConfirmedTopics(meetingIds)
         );
+        Set<Long> preOpinionMeetingIds = new HashSet<>(
+                topicAnswerRepository.findMeetingIdsWithSubmittedAnswers(meetingIds, userId)
+        );
+        Set<Long> retrospectiveMeetingIds = new HashSet<>(
+                personalRetrospectiveRepository.findMeetingIdsWithRetrospective(meetingIds, userId)
+        );
 
         for (Meeting meeting : meetings) {
             MeetingProgressStatus progressStatus = resolveProgressStatus(
@@ -1045,7 +1051,9 @@ public class MeetingService {
                     meeting.getMeetingStatus(),
                     myRole,
                     progressStatus,
-                    preOpinionTemplateConfirmed
+                    preOpinionTemplateConfirmed,
+                    preOpinionMeetingIds.contains(meeting.getId()),
+                    retrospectiveMeetingIds.contains(meeting.getId())
             ));
         }
         return items;
