@@ -19,6 +19,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          # 원격에서 docker build(gradle 빌드)가 10분(기본값)을 넘겨 타임아웃나는 것을 방지
+          command_timeout: 30m
           envs: POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,DB_USERNAME,DB_PASSWORD,KAKAO_CLIENT_ID,KAKAO_CLIENT_SECRET,KAKAO_API_KEY,KAKAO_API_BASE_URL,MINIO_ACCESS_KEY,MINIO_SECRET_KEY,MINIO_EXTERNAL_ENDPOINT,MINIO_BUCKET,MINIO_SERVER_URL
           script: |
             set -e
