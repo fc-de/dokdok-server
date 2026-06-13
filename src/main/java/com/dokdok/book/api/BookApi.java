@@ -238,6 +238,7 @@ public interface BookApi {
                                               "data": {
                                                 "items": [
                                                   {
+                                                    "personalBookId": 100,
                                                     "bookId": 1,
                                                     "title": "예제 도서명",
                                                     "publisher": "예제 출판사",
@@ -561,7 +562,8 @@ public interface BookApi {
             description = """
                     내 책장에 등록된 책 여러 권을 한 번에 삭제합니다.
                     - 로그인한 사용자 소유의 책만 삭제할 수 있습니다.
-                    - 요청 본문의 bookIds 배열에 삭제할 book ID 목록을 전달합니다.
+                    - 요청 본문의 bookIds 배열에 삭제할 Book ID 목록을 전달합니다.
+                    - bookIds는 GET /api/books 응답의 items[].bookId 값을 사용하세요.
                     """
     )
     @ApiResponses({
@@ -651,7 +653,7 @@ public interface BookApi {
     })
     @DeleteMapping
     ResponseEntity<ApiResponse<Void>> deleteMyBooks(
-            @Parameter(description = "일괄 삭제할 책 ID 목록", required = true)
+            @Parameter(description = "일괄 삭제할 Book ID 목록 (GET /api/books 응답의 items[].bookId)", required = true)
             @Valid @RequestBody BookBulkDeleteRequest request
     );
 
