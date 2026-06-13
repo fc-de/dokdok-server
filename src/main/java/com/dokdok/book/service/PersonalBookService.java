@@ -181,27 +181,29 @@ public class PersonalBookService {
     }
 
     @Transactional
-    public void deleteBook(Long bookId) {
+    public void deleteBook(Long personalBookId) {
         User userEntity = userValidator.findUserOrThrow(SecurityUtil.getCurrentUserId());
 
-        PersonalBook personalBook = bookValidator.validateInBookShelf(userEntity.getId(), bookId);
+        PersonalBook personalBook = bookValidator.validatePersonalBook(userEntity.getId(), personalBookId);
 
         personalBookRepository.delete(personalBook);
+        Long bookId = personalBook.getBook().getId();
         bookReviewRepository.findByBookIdAndUserId(bookId, userEntity.getId())
                 .ifPresent(review -> review.deleteReview());
     }
 
     @Transactional
-    public void deleteBooks(List<Long> bookIds) {
+    public void deleteBooks(List<Long> personalBookIds) {
         User userEntity = userValidator.findUserOrThrow(SecurityUtil.getCurrentUserId());
 
-        List<Long> distinctBookIds = bookIds.stream()
+        List<Long> distinctIds = personalBookIds.stream()
                 .distinct()
                 .toList();
 
-        for (Long bookId : distinctBookIds) {
-            PersonalBook personalBook = bookValidator.validateInBookShelf(userEntity.getId(), bookId);
+        for (Long personalBookId : distinctIds) {
+            PersonalBook personalBook = bookValidator.validatePersonalBook(userEntity.getId(), personalBookId);
             personalBookRepository.delete(personalBook);
+            Long bookId = personalBook.getBook().getId();
             bookReviewRepository.findByBookIdAndUserId(bookId, userEntity.getId())
                     .ifPresent(review -> review.deleteReview());
         }
