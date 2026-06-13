@@ -530,7 +530,6 @@ class PersonalBookServiceTest {
     void deleteBook_Success() {
         // given
         Long userId = 1L;
-        Long personalBookId = 100L;
         Long bookId = 10L;
 
         User user = User.builder()
@@ -548,7 +547,7 @@ class PersonalBookServiceTest {
                 .build();
 
         PersonalBook personalBook = PersonalBook.builder()
-                .id(personalBookId)
+                .id(100L)
                 .user(user)
                 .book(book)
                 .readingStatus(BookReadingStatus.READING)
@@ -556,16 +555,17 @@ class PersonalBookServiceTest {
 
         securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
         when(userValidator.findUserOrThrow(userId)).thenReturn(user);
-        when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
+        when(personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId))
+                .thenReturn(Optional.of(personalBook));
         when(bookReviewRepository.findByBookIdAndUserId(bookId, userId)).thenReturn(Optional.empty());
 
         // when
-        personalBookService.deleteBook(personalBookId);
+        personalBookService.deleteBook(bookId);
 
         // then
         securityUtilMock.verify(SecurityUtil::getCurrentUserId, times(1));
         verify(userValidator, times(1)).findUserOrThrow(userId);
-        verify(bookValidator, times(1)).validatePersonalBook(userId, personalBookId);
+        verify(personalBookRepository, times(1)).findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId);
         verify(personalBookRepository, times(1)).delete(personalBook);
     }
 
@@ -574,7 +574,7 @@ class PersonalBookServiceTest {
     void deleteBook_NotFound() {
         // given
         Long userId = 1L;
-        Long personalBookId = 100L;
+        Long bookId = 10L;
 
         User user = User.builder()
                 .id(userId)
@@ -584,17 +584,17 @@ class PersonalBookServiceTest {
 
         securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
         when(userValidator.findUserOrThrow(userId)).thenReturn(user);
-        when(bookValidator.validatePersonalBook(userId, personalBookId))
-                .thenThrow(new BookException(BookErrorCode.BOOK_NOT_IN_SHELF));
+        when(personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId))
+                .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> personalBookService.deleteBook(personalBookId))
+        assertThatThrownBy(() -> personalBookService.deleteBook(bookId))
                 .isInstanceOf(BookException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BookErrorCode.BOOK_NOT_IN_SHELF);
 
         securityUtilMock.verify(SecurityUtil::getCurrentUserId, times(1));
         verify(userValidator, times(1)).findUserOrThrow(userId);
-        verify(bookValidator, times(1)).validatePersonalBook(userId, personalBookId);
+        verify(personalBookRepository, times(1)).findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, bookId);
         verify(personalBookRepository, never()).delete(any());
     }
 
@@ -603,7 +603,7 @@ class PersonalBookServiceTest {
     void deleteBooks_Success() {
         // given
         Long userId = 1L;
-        List<Long> personalBookIds = List.of(100L, 101L);
+        List<Long> bookIds = List.of(10L, 11L);
 
         User user = User.builder()
                 .id(userId)
@@ -629,29 +629,31 @@ class PersonalBookServiceTest {
 
         securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
         when(userValidator.findUserOrThrow(userId)).thenReturn(user);
-        when(bookValidator.validatePersonalBook(userId, 100L)).thenReturn(firstPersonalBook);
-        when(bookValidator.validatePersonalBook(userId, 101L)).thenReturn(secondPersonalBook);
+        when(personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, 10L))
+                .thenReturn(Optional.of(firstPersonalBook));
+        when(personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, 11L))
+                .thenReturn(Optional.of(secondPersonalBook));
         when(bookReviewRepository.findByBookIdAndUserId(10L, userId)).thenReturn(Optional.empty());
         when(bookReviewRepository.findByBookIdAndUserId(11L, userId)).thenReturn(Optional.empty());
 
         // when
-        personalBookService.deleteBooks(personalBookIds);
+        personalBookService.deleteBooks(bookIds);
 
         // then
         securityUtilMock.verify(SecurityUtil::getCurrentUserId, times(1));
         verify(userValidator, times(1)).findUserOrThrow(userId);
-        verify(bookValidator, times(1)).validatePersonalBook(userId, 100L);
-        verify(bookValidator, times(1)).validatePersonalBook(userId, 101L);
+        verify(personalBookRepository, times(1)).findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, 10L);
+        verify(personalBookRepository, times(1)).findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, 11L);
         verify(personalBookRepository, times(1)).delete(firstPersonalBook);
         verify(personalBookRepository, times(1)).delete(secondPersonalBook);
     }
 
     @Test
-    @DisplayName("다건 삭제에서 중복 personalBookId는 한 번만 처리된다")
+    @DisplayName("다건 삭제에서 중복 bookId는 한 번만 처리된다")
     void deleteBooks_DeduplicateIds() {
         // given
         Long userId = 1L;
-        List<Long> personalBookIds = List.of(100L, 100L, 100L);
+        List<Long> bookIds = List.of(10L, 10L, 10L);
 
         User user = User.builder()
                 .id(userId)
@@ -669,14 +671,15 @@ class PersonalBookServiceTest {
 
         securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
         when(userValidator.findUserOrThrow(userId)).thenReturn(user);
-        when(bookValidator.validatePersonalBook(userId, 100L)).thenReturn(personalBook);
+        when(personalBookRepository.findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, 10L))
+                .thenReturn(Optional.of(personalBook));
         when(bookReviewRepository.findByBookIdAndUserId(10L, userId)).thenReturn(Optional.empty());
 
         // when
-        personalBookService.deleteBooks(personalBookIds);
+        personalBookService.deleteBooks(bookIds);
 
         // then
-        verify(bookValidator, times(1)).validatePersonalBook(userId, 100L);
+        verify(personalBookRepository, times(1)).findTopByUserIdAndBookIdOrderByAddedAtDesc(userId, 10L);
         verify(personalBookRepository, times(1)).delete(personalBook);
     }
 

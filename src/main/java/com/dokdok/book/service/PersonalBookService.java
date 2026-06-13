@@ -181,29 +181,31 @@ public class PersonalBookService {
     }
 
     @Transactional
-    public void deleteBook(Long personalBookId) {
+    public void deleteBook(Long bookId) {
         User userEntity = userValidator.findUserOrThrow(SecurityUtil.getCurrentUserId());
 
-        PersonalBook personalBook = bookValidator.validatePersonalBook(userEntity.getId(), personalBookId);
+        PersonalBook personalBook = personalBookRepository
+                .findTopByUserIdAndBookIdOrderByAddedAtDesc(userEntity.getId(), bookId)
+                .orElseThrow(() -> new BookException(BookErrorCode.BOOK_NOT_IN_SHELF));
 
         personalBookRepository.delete(personalBook);
-        Long bookId = personalBook.getBook().getId();
         bookReviewRepository.findByBookIdAndUserId(bookId, userEntity.getId())
                 .ifPresent(review -> review.deleteReview());
     }
 
     @Transactional
-    public void deleteBooks(List<Long> personalBookIds) {
+    public void deleteBooks(List<Long> bookIds) {
         User userEntity = userValidator.findUserOrThrow(SecurityUtil.getCurrentUserId());
 
-        List<Long> distinctIds = personalBookIds.stream()
+        List<Long> distinctIds = bookIds.stream()
                 .distinct()
                 .toList();
 
-        for (Long personalBookId : distinctIds) {
-            PersonalBook personalBook = bookValidator.validatePersonalBook(userEntity.getId(), personalBookId);
+        for (Long bookId : distinctIds) {
+            PersonalBook personalBook = personalBookRepository
+                    .findTopByUserIdAndBookIdOrderByAddedAtDesc(userEntity.getId(), bookId)
+                    .orElseThrow(() -> new BookException(BookErrorCode.BOOK_NOT_IN_SHELF));
             personalBookRepository.delete(personalBook);
-            Long bookId = personalBook.getBook().getId();
             bookReviewRepository.findByBookIdAndUserId(bookId, userEntity.getId())
                     .ifPresent(review -> review.deleteReview());
         }
