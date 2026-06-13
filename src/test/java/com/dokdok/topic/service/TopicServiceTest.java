@@ -428,6 +428,9 @@ class TopicServiceTest {
             given(meetingValidator.getMeetingMember(meetingId, userId))
                     .willReturn(testMeetingMember);
 
+            given(topicRepository.canSuggestTopic(meetingId, userId))
+                    .willReturn(true);
+
             // Topic 저장 성공
             given(topicRepository.save(any(Topic.class)))
                     .willReturn(testTopic);
@@ -447,7 +450,45 @@ class TopicServiceTest {
             verify(meetingValidator).validateMeetingInGathering(meetingId, gatheringId);
             verify(meetingValidator).validateMeetingStatus(meetingId);
             verify(meetingValidator).getMeetingMember(meetingId, userId);
+            verify(topicRepository).canSuggestTopic(meetingId, userId);
             verify(topicRepository).save(any(Topic.class));
+        }
+    }
+
+    @Test
+    @DisplayName("이미 확정된 주제가 있으면 주제를 생성할 수 없다")
+    void createTopic_ConfirmedTopicExists_ThrowsException() {
+        Long gatheringId = 1L;
+        Long meetingId = 1L;
+        Long userId = 1L;
+
+        try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
+            securityUtilMock.when(SecurityUtil::getCurrentUserId)
+                    .thenReturn(userId);
+
+            doNothing().when(gatheringValidator)
+                    .validateGathering(gatheringId);
+
+            doNothing().when(meetingValidator)
+                    .validateMeetingInGathering(meetingId, gatheringId);
+
+            doNothing().when(meetingValidator)
+                    .validateMeetingStatus(meetingId);
+
+            given(meetingValidator.getMeetingMember(meetingId, userId))
+                    .willReturn(testMeetingMember);
+
+            given(topicRepository.canSuggestTopic(meetingId, userId))
+                    .willReturn(false);
+
+            assertThatThrownBy(() ->
+                    topicService.createTopic(gatheringId, meetingId, testRequest))
+                    .isInstanceOf(MeetingException.class)
+                    .hasFieldOrPropertyWithValue("errorCode",
+                            MeetingErrorCode.MEETING_ALREADY_CONFIRMED);
+
+            verify(topicRepository).canSuggestTopic(meetingId, userId);
+            verify(topicRepository, never()).save(any());
         }
     }
 

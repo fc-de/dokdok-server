@@ -6,6 +6,8 @@ import com.dokdok.meeting.entity.Meeting;
 import com.dokdok.meeting.entity.MeetingMember;
 import com.dokdok.meeting.entity.MeetingStatus;
 import com.dokdok.global.response.CursorResponse;
+import com.dokdok.meeting.exception.MeetingErrorCode;
+import com.dokdok.meeting.exception.MeetingException;
 import com.dokdok.meeting.repository.MeetingMemberRepository;
 import com.dokdok.meeting.service.MeetingValidator;
 import com.dokdok.topic.dto.request.ConfirmTopicsRequest;
@@ -92,6 +94,9 @@ public class TopicService {
         meetingValidator.validateMeetingStatus(meetingId);
 
         MeetingMember meetingMember = meetingValidator.getMeetingMember(meetingId, userId);
+        if (!topicRepository.canSuggestTopic(meetingId, userId)) {
+            throw new MeetingException(MeetingErrorCode.MEETING_ALREADY_CONFIRMED);
+        }
 
         Meeting meeting = meetingMember.getMeeting();
         User user = meetingMember.getUser();
