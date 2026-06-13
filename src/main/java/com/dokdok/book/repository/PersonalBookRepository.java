@@ -65,19 +65,25 @@ public interface PersonalBookRepository extends JpaRepository<PersonalBook, Long
                 where pb.user_id = :userId
                     and pb.deleted_at is null
                     and (:gatheringId is null or g.gathering_id = :gatheringId)
-                    and (:readingStatus is null or pb.reading_status = :readingStatus)
                 group by b.book_id, b.book_name, b.publisher, b.author, b.thumbnail
+                having (:readingStatus is null or
+                    (array_agg(pb.reading_status order by pb.added_at desc, pb.personal_book_id desc))[1] = :readingStatus)
                 """,
             countQuery = """
-                select count(distinct pb.book_id)
-                from personal_book pb
-                left join gathering g
-                    on pb.gathering_id = g.gathering_id
-                    and g.deleted_at is null
-                where pb.user_id = :userId
-                    and pb.deleted_at is null
-                    and (:gatheringId is null or g.gathering_id = :gatheringId)
-                    and (:readingStatus is null or pb.reading_status = :readingStatus)
+                select count(*)
+                from (
+                    select pb.book_id
+                    from personal_book pb
+                    left join gathering g
+                        on pb.gathering_id = g.gathering_id
+                        and g.deleted_at is null
+                    where pb.user_id = :userId
+                        and pb.deleted_at is null
+                        and (:gatheringId is null or g.gathering_id = :gatheringId)
+                    group by pb.book_id
+                    having (:readingStatus is null or
+                        (array_agg(pb.reading_status order by pb.added_at desc, pb.personal_book_id desc))[1] = :readingStatus)
+                ) sub
                 """,
             nativeQuery = true
     )
@@ -136,8 +142,9 @@ public interface PersonalBookRepository extends JpaRepository<PersonalBook, Long
                 where pb.user_id = :userId
                     and pb.deleted_at is null
                     and (:gatheringId is null or g.gathering_id = :gatheringId)
-                    and (:readingStatus is null or pb.reading_status = :readingStatus)
                 group by b.book_id, b.book_name, b.publisher, b.author, b.thumbnail
+                having (:readingStatus is null or
+                    (array_agg(pb.reading_status order by pb.added_at desc, pb.personal_book_id desc))[1] = :readingStatus)
                 """,
             nativeQuery = true
     )
