@@ -2,6 +2,7 @@ package com.dokdok.book.service;
 
 import com.dokdok.book.dto.request.PersonalReadingRecordCreateRequest;
 import com.dokdok.book.dto.response.CursorPageResponse;
+import com.dokdok.book.dto.response.PersonalBookGatheringResponse;
 import com.dokdok.book.dto.response.PersonalReadingRecordCreateResponse;
 import com.dokdok.book.dto.response.PersonalReadingRecordListResponse;
 import com.dokdok.book.dto.response.PersonalReadingTopicAnswerResponse;
@@ -12,6 +13,7 @@ import com.dokdok.book.entity.RecordType;
 import com.dokdok.book.exception.RecordErrorCode;
 import com.dokdok.book.exception.RecordException;
 import com.dokdok.book.dto.request.PersonalReadingRecordUpdateRequest;
+import com.dokdok.book.repository.PersonalBookRepository;
 import com.dokdok.book.repository.PersonalReadingRecordRepository;
 import com.dokdok.global.util.SecurityUtil;
 import com.dokdok.meeting.entity.Meeting;
@@ -47,6 +49,7 @@ public class PersonalReadingRecordService {
     private static final int DEFAULT_PAGE_SIZE = 10;
 
     private final PersonalReadingRecordRepository personalReadingRecordRepository;
+    private final PersonalBookRepository personalBookRepository;
     private final UserValidator userValidator;
     private final BookValidator bookValidator;
     private final MeetingRepository meetingRepository;
@@ -216,6 +219,16 @@ public class PersonalReadingRecordService {
                 meeting.getMeetingStartDate(),
                 items
         );
+    }
+
+    public List<PersonalBookGatheringResponse> getGatheringsForBook(Long personalBookId) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        PersonalBook personalBook = bookValidator.validatePersonalBook(userId, personalBookId);
+        return personalBookRepository
+                .findActiveGatheringsWithMeetingsByUserAndBook(userId, personalBook.getBook().getId())
+                .stream()
+                .map(p -> new PersonalBookGatheringResponse(p.getGatheringId(), p.getGatheringName()))
+                .toList();
     }
 
     private Map<String, Object> normalizeMeta(RecordType recordType, Map<String, Object> meta) {
