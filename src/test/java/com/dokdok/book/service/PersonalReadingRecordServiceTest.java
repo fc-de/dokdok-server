@@ -3,6 +3,7 @@ package com.dokdok.book.service;
 import com.dokdok.book.dto.request.PersonalReadingRecordCreateRequest;
 import com.dokdok.book.dto.request.PersonalReadingRecordUpdateRequest;
 import com.dokdok.book.dto.response.CursorPageResponse;
+import com.dokdok.book.dto.response.PersonalBookGatheringResponse;
 import com.dokdok.book.dto.response.PersonalReadingRecordCreateResponse;
 import com.dokdok.book.dto.response.PersonalReadingRecordListResponse;
 import com.dokdok.book.dto.response.ReadingRecordCursor;
@@ -11,8 +12,12 @@ import com.dokdok.book.entity.BookReadingStatus;
 import com.dokdok.book.entity.PersonalBook;
 import com.dokdok.book.entity.PersonalReadingRecord;
 import com.dokdok.book.entity.RecordType;
+import com.dokdok.book.exception.BookErrorCode;
+import com.dokdok.book.exception.BookException;
 import com.dokdok.book.exception.RecordErrorCode;
 import com.dokdok.book.exception.RecordException;
+import com.dokdok.book.repository.PersonalBookGatheringProjection;
+import com.dokdok.book.repository.PersonalBookRepository;
 import com.dokdok.book.repository.PersonalReadingRecordRepository;
 import com.dokdok.global.util.SecurityUtil;
 import com.dokdok.user.entity.User;
@@ -57,6 +62,9 @@ class PersonalReadingRecordServiceTest {
 
     @Mock
     private PersonalReadingRecordRepository personalReadingRecordRepository;
+
+    @Mock
+    private PersonalBookRepository personalBookRepository;
 
     @Mock
     private UserValidator userValidator;
@@ -555,6 +563,89 @@ class PersonalReadingRecordServiceTest {
         securityUtilMock.verify(SecurityUtil::getCurrentUserId, times(1));
         verify(userValidator, times(1)).findUserOrThrow(userId);
         verify(bookValidator, times(1)).validatePersonalBook(userId, personalBookId);
+    }
+
+    @Nested
+    @DisplayName("GET /api/book/{personalBookId}/gatherings - 책에 연결된 모임 목록 조회")
+    class GetGatheringsForBookTest {
+
+        private final Long userId = 1L;
+        private final Long personalBookId = 10L;
+        private final Long bookId = 100L;
+        private User user;
+        private PersonalBook personalBook;
+
+        @BeforeEach
+        void setUp() {
+            user = User.builder().id(userId).kakaoId(1L).nickname("tester").build();
+            Book book = Book.builder().id(bookId).isbn("9780000000001").bookName("책").author("저자").publisher("출판사").build();
+            personalBook = PersonalBook.builder()
+                    .id(personalBookId)
+                    .user(user)
+                    .book(book)
+                    .readingStatus(BookReadingStatus.READING)
+                    .build();
+            securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
+        }
+
+        @Test
+        @DisplayName("모임이 존재하면 gatheringId와 gatheringName을 반환한다")
+        void getGatheringsForBook_ReturnsList() {
+            // given
+            PersonalBookGatheringProjection p1 = mockProjection(1L, "독서모임A");
+            PersonalBookGatheringProjection p2 = mockProjection(2L, "독서모임B");
+
+            when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
+            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, bookId))
+                    .thenReturn(List.of(p1, p2));
+
+            // when
+            List<PersonalBookGatheringResponse> result = personalReadingRecordService.getGatheringsForBook(personalBookId);
+
+            // then
+            assertThat(result).hasSize(2);
+            assertThat(result.get(0).gatheringId()).isEqualTo(1L);
+            assertThat(result.get(0).gatheringName()).isEqualTo("독서모임A");
+            assertThat(result.get(1).gatheringId()).isEqualTo(2L);
+            assertThat(result.get(1).gatheringName()).isEqualTo("독서모임B");
+        }
+
+        @Test
+        @DisplayName("연결된 모임이 없으면 빈 리스트를 반환한다")
+        void getGatheringsForBook_EmptyList() {
+            // given
+            when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
+            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, bookId))
+                    .thenReturn(List.of());
+
+            // when
+            List<PersonalBookGatheringResponse> result = personalReadingRecordService.getGatheringsForBook(personalBookId);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("책장에 없는 책이면 BookException이 발생한다")
+        void getGatheringsForBook_BookNotInShelf_ThrowsException() {
+            // given
+            when(bookValidator.validatePersonalBook(userId, personalBookId))
+                    .thenThrow(new BookException(BookErrorCode.BOOK_NOT_IN_SHELF));
+
+            // when & then
+            assertThatThrownBy(() -> personalReadingRecordService.getGatheringsForBook(personalBookId))
+                    .isInstanceOf(BookException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", BookErrorCode.BOOK_NOT_IN_SHELF);
+
+            verify(personalBookRepository, never()).findActiveGatheringsWithMeetingsByUserAndBook(any(), any());
+        }
+
+        private PersonalBookGatheringProjection mockProjection(Long gatheringId, String gatheringName) {
+            PersonalBookGatheringProjection projection = mock(PersonalBookGatheringProjection.class);
+            when(projection.getGatheringId()).thenReturn(gatheringId);
+            when(projection.getGatheringName()).thenReturn(gatheringName);
+            return projection;
+        }
     }
 
     @Nested
