@@ -187,13 +187,13 @@ public interface PersonalBookRepository extends JpaRepository<PersonalBook, Long
             FROM personal_book pb
             JOIN gathering g ON pb.gathering_id = g.gathering_id
             WHERE pb.user_id = :userId
-              AND pb.book_id = :bookId
               AND pb.deleted_at IS NULL
               AND g.deleted_at IS NULL
+              AND pb.personal_book_id = :personalBookId
             """, nativeQuery = true)
     List<PersonalBookGatheringProjection> findActiveGatheringsWithMeetingsByUserAndBook(
             @Param("userId") Long userId,
-            @Param("bookId") Long bookId
+            @Param("personalBookId") Long personalBookId
     );
 
 }

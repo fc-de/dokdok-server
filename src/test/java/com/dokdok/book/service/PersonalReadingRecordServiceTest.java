@@ -596,7 +596,7 @@ class PersonalReadingRecordServiceTest {
             PersonalBookGatheringProjection p2 = mockProjection(2L, "독서모임B");
 
             when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
-            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, bookId))
+            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, personalBookId))
                     .thenReturn(List.of(p1, p2));
 
             // when
@@ -615,7 +615,7 @@ class PersonalReadingRecordServiceTest {
         void getGatheringsForBook_EmptyList() {
             // given
             when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
-            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, bookId))
+            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, personalBookId))
                     .thenReturn(List.of());
 
             // when

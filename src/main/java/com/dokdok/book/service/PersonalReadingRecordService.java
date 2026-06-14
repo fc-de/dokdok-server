@@ -225,7 +225,7 @@ public class PersonalReadingRecordService {
         Long userId = SecurityUtil.getCurrentUserId();
         PersonalBook personalBook = bookValidator.validatePersonalBook(userId, personalBookId);
         return personalBookRepository
-                .findActiveGatheringsWithMeetingsByUserAndBook(userId, personalBook.getBook().getId())
+                .findActiveGatheringsWithMeetingsByUserAndBook(userId, personalBookId)
                 .stream()
                 .map(p -> new PersonalBookGatheringResponse(p.getGatheringId(), p.getGatheringName()))
                 .toList();
