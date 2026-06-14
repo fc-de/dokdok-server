@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Tag(name = "독서 기록", description = "책별 독서 기록 관련 API")
 @RequestMapping("/api/book")
@@ -697,5 +698,50 @@ public interface PersonalBookRecordApi {
             @RequestParam(required = false) RecordType recordType,
             @Parameter(description = "정렬 기준 (DESC: 최신순, ASC: 오래된순)", example = "DESC")
             @RequestParam(required = false, defaultValue = "DESC") TimelineSortType sort
+    );
+
+    @Operation(
+            summary = "책에 연결된 모임 목록 조회 (developer: 경서영)",
+            description = """
+                    특정 개인 책장의 책에 연결된 모임 목록을 조회합니다.
+                    """
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "모임 목록 조회 성공",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "code": "SUCCESS",
+                                      "message": "책에 연결된 모임 목록 조회 성공",
+                                      "data": [
+                                        { "gatheringId": 1, "gatheringName": "독서모임A" },
+                                        { "gatheringId": 2, "gatheringName": "독서모임B" }
+                                      ]
+                                    }
+                                    """))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 실패",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            examples = @ExampleObject(value = """
+                                    {"code": "G102", "message": "인증이 필요합니다.", "data": null}
+                                    """))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "책을 찾을 수 없음",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            examples = @ExampleObject(value = """
+                                    {"code": "B003", "message": "책장에 해당 책이 존재하지 않습니다.", "data": null}
+                                    """))
+            )
+    })
+    @GetMapping("/{personalBookId}/gatherings")
+    ResponseEntity<ApiResponse<List<PersonalBookGatheringResponse>>> getGatheringsForBook(
+            @Parameter(description = "개인 책장 ID (personal_book 테이블 PK)", required = true, example = "10")
+            @PathVariable Long personalBookId
     );
 }

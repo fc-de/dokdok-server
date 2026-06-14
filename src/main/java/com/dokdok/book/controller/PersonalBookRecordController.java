@@ -6,6 +6,7 @@ import com.dokdok.book.dto.request.PersonalReadingRecordUpdateRequest;
 import com.dokdok.book.dto.request.PreOpinionTimeType;
 import com.dokdok.book.dto.request.TimelineSortType;
 import com.dokdok.book.dto.response.*;
+import java.util.List;
 import com.dokdok.book.entity.RecordType;
 import com.dokdok.book.service.PersonalReadingRecordService;
 import com.dokdok.book.service.ReadingTimelineService;
@@ -75,6 +76,16 @@ public class PersonalBookRecordController implements PersonalBookRecordApi {
     ) {
         PersonalReadingTopicAnswerResponse response = personalReadingRecordService.getTopicAnswers(personalBookId);
         return ApiResponse.success(response, "사전 의견 조회 성공");
+    }
+
+    @Override
+    @GetMapping("/{personalBookId}/gatherings")
+    public ResponseEntity<ApiResponse<List<PersonalBookGatheringResponse>>> getGatheringsForBook(
+            @PathVariable Long personalBookId) {
+        return ApiResponse.success(
+                personalReadingRecordService.getGatheringsForBook(personalBookId),
+                "책에 연결된 모임 목록 조회 성공"
+        );
     }
 
     @Override
