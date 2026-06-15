@@ -58,3 +58,22 @@ jobs:
           name: test-reports-${{ github.sha }} # 아티팩트 파일 이름 (고유 ID 포함)
           path: build/reports/tests/test/ # 업로드할 리포트 파일 디렉토리 경로
           retention-days: 7 # 아티팩트 보존 기간 (선택 사항)
+
+  dev-rules:
+    name: Dev-Rules Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 산출물 동기화 검사는 base 와의 diff 가 필요
+
+      - name: Fetch base branch
+        run: git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
+      - name: 산출물 동기화 검사 (B14 — 위반 시 실패)
+        run: bash scripts/check-doc-sync.sh "origin/${{ github.base_ref }}"
+
+      - name: 컨벤션 준수율 리포트 (참고, 비차단)
+        if: always()
+        run: bash scripts/dev-rules-audit.sh

@@ -74,6 +74,7 @@
 | B008 | BOOK_REVIEW_INVALID_RATING | 별점은 0.5 단위의 5점 만점 값이어야 합니다. | 400 |
 | B009 | BOOK_REVIEW_DELETED | 삭제된 책 리뷰입니다. | 400 |
 | B010 | BOOK_REVIEW_ACCESS_DENIED_NOT_WRITTEN | 평가를 작성한 사용자만 조회할 수 있습니다. | 403 |
+| B011 | BOOK_REVIEW_NO_CHANGES | 변경된 내용이 없습니다. | 400 |
 
 ---
 
@@ -166,6 +167,9 @@
 | R105 | NO_ACCESS_RETROSPECTIVE | 회고에 접근할 권한이 없습니다. | 403 |
 | R106 | SUMMARY_NOT_FOUND | AI 요약을 찾을 수 없습니다. | 404 |
 | R107 | NOT_AUTHOR_OF_RETROSPECTIVE | 사용자가 작성한 회고가 아닙니다. | 403 |
+| R108 | RETROSPECTIVE_ALREADY_PUBLISHED | 이미 약속 회고가 생성되었습니다. | 409 |
+| R109 | RETROSPECTIVE_NOT_PUBLISHED | 약속 회고가 아직 생성되지 않았습니다. | 403 |
+| R110 | RETROSPECTIVE_CONTENT_EMPTY | 회고 내용을 하나 이상 작성해야 합니다. | 400 |
 
 ---
 

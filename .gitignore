@@ -52,7 +52,6 @@ scripts/PR_TITLE.txt
 scripts/PR_BODY.md
 
 /logs/**
-/claude.md
 /agent.md
 
 ### Private Docs ###
