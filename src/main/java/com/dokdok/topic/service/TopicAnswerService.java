@@ -177,7 +177,7 @@ public class TopicAnswerService {
         meetingValidator.validateMeetingInGathering(meetingId, gatheringId);
         meetingValidator.validateMeetingMember(meetingId, userId);
 
-        List<Long> topicIds = request.topicIds();
+        List<Long> topicIds = request.topicIds() != null ? request.topicIds() : List.of();
         List<Topic> topics = topicRepository.findAllByIdInAndMeetingId(topicIds, meetingId);
         if (topics.size() != topicIds.size()) {
             throw new TopicException(TopicErrorCode.TOPIC_NOT_FOUND);
