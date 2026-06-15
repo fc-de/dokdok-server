@@ -15,6 +15,7 @@ git remote -v                                    # origin = fc-de/dokdok-server 
 
 ## 1단계: 필수 Read (생략 불가)
 - `.github/PULL_REQUEST_TEMPLATE.md` — PR 본문은 이 구조를 그대로 채운다
+- `docs/dev-rules/BE-rules.md` — 변경이 규칙을 위반하지 않는지 점검 기준 (BE 코드 변경이 있을 때)
 
 ## 2단계: 브랜치·커밋 상태 점검
 ```bash
@@ -47,6 +48,15 @@ git push -u origin "$(git branch --show-current)"
 | 테스트 | `[TEST]` | `type:test` |
 
 도메인 라벨(해당 시): `domain:meeting` `domain:book` `domain:topic` `domain:gathering` `domain:retrospective` `domain:users` `domain:keyword` `domain:topic_like` `domain:gathering_member` `domain:meeting_member` `domain:reading_summary`
+
+## 4.5단계: BE-rules 자가 점검 (BE 코드 변경 시)
+`docs/dev-rules/BE-rules.md` 의 "자가 점검 요약" 표(B2~B14)로 변경분을 점검한다.
+- 위반/누락이 있으면 **PR 생성 중단** → 사용자에게 항목 + 근거 1줄 보고 → 수정/무시 결정 후 진행.
+- 특히 의식:
+  - **B14-1** 에러코드 추가/변경 시 `docs/ErrorCode.md` 동기화했는가
+  - **B14-2** API 추가/변경 시 도메인 `api/XxxApi` Swagger 인터페이스 갱신했는가
+  - **B10** enum 값 추가 시 DB CHECK 제약 갱신 SQL 포함했는가
+  - **B4** raw 예외(E000) 없이 도메인 예외만 던지는가
 
 ## 5단계: 제목·본문 작성
 
