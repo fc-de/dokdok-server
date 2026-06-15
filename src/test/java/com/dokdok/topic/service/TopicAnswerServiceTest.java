@@ -260,6 +260,49 @@ class TopicAnswerServiceTest {
     }
 
     @Test
+    @DisplayName("빈 토픽 목록으로도 제출(공유)할 수 있다")
+    void submitMyAnswer_allowsEmptyTopicIds() {
+        given(topicRepository.findAllByIdInAndMeetingId(List.of(), 1L))
+                .willReturn(List.of());
+        given(topicAnswerRepository.findByMeetingIdUserId(1L, 1L))
+                .willReturn(List.of());
+        given(preOpinionBookReviewService.upsertReview(eq(1L), any(BookReviewRequest.class)))
+                .willReturn(new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of(), null));
+
+        TopicAnswerBulkSubmitRequest request = new TopicAnswerBulkSubmitRequest(
+                new BookReviewRequest(BigDecimal.valueOf(4.5), List.of(1L)),
+                List.of()
+        );
+        PreOpinionSubmitResponse response =
+                topicAnswerService.submitMyAnswer(1L, 1L, request);
+
+        verify(preOpinionBookReviewService).applyToPersonalBookReview(eq(1L), any(BookReviewRequest.class));
+        verify(topicAnswerRepository, never()).save(any(TopicAnswer.class));
+        assertThat(response.review().reviewId()).isEqualTo(1L);
+        assertThat(response.answers()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("토픽 목록이 null이어도 제출(공유)할 수 있다")
+    void submitMyAnswer_allowsNullTopicIds() {
+        given(topicRepository.findAllByIdInAndMeetingId(List.of(), 1L))
+                .willReturn(List.of());
+        given(topicAnswerRepository.findByMeetingIdUserId(1L, 1L))
+                .willReturn(List.of());
+        given(preOpinionBookReviewService.upsertReview(eq(1L), any(BookReviewRequest.class)))
+                .willReturn(new BookReviewResponse(1L, 10L, 1L, BigDecimal.valueOf(4.5), List.of(), null));
+
+        TopicAnswerBulkSubmitRequest request = new TopicAnswerBulkSubmitRequest(
+                new BookReviewRequest(BigDecimal.valueOf(4.5), List.of(1L)),
+                null
+        );
+        PreOpinionSubmitResponse response =
+                topicAnswerService.submitMyAnswer(1L, 1L, request);
+
+        assertThat(response.answers()).isEmpty();
+    }
+
+    @Test
     @DisplayName("이미 제출된 답변은 다시 제출할 수 없다")
     void submitMyAnswer_throwsWhenAlreadySubmitted() {
         Topic topic = Topic.builder().id(12L).build();
