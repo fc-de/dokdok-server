@@ -49,14 +49,24 @@ git push -u origin "$(git branch --show-current)"
 
 도메인 라벨(해당 시): `domain:meeting` `domain:book` `domain:topic` `domain:gathering` `domain:retrospective` `domain:users` `domain:keyword` `domain:topic_like` `domain:gathering_member` `domain:meeting_member` `domain:reading_summary`
 
-## 4.5단계: BE-rules 자가 점검 (BE 코드 변경 시)
-`docs/dev-rules/BE-rules.md` 의 "자가 점검 요약" 표(B2~B14)로 변경분을 점검한다.
-- 위반/누락이 있으면 **PR 생성 중단** → 사용자에게 항목 + 근거 1줄 보고 → 수정/무시 결정 후 진행.
-- 특히 의식:
-  - **B14-1** 에러코드 추가/변경 시 `docs/ErrorCode.md` 동기화했는가
-  - **B14-2** API 추가/변경 시 도메인 `api/XxxApi` Swagger 인터페이스 갱신했는가
-  - **B10** enum 값 추가 시 DB CHECK 제약 갱신 SQL 포함했는가
-  - **B4** raw 예외(E000) 없이 도메인 예외만 던지는가
+## 4.5단계: BE-rules 자가 점검 + 산출물 동기화 게이트 (BE 코드 변경 시)
+
+`docs/dev-rules/BE-rules.md` 의 "자가 점검 요약" 표(B2~B14)로 변경분을 점검한다. **이 단계가 산출물 동기화(B14)의 유일한 강제 지점이다**(훅 아님).
+
+먼저 PR 에 들어갈 변경 파일을 확인한다:
+```bash
+git diff origin/dev...HEAD --name-only
+```
+
+위 목록으로 **산출물 동기화(B14) 하드 체크** — 누락이면 **PR 생성 중단**:
+- **B14-1** `*ErrorCode.java` 가 있는데 `docs/ErrorCode.md` 가 없으면 → 문서 동기화 후 진행
+- **B14-2** `*Controller.java` 가 있는데 대응 `*Api.java`(`/controller/`→`/api/`, `Controller.java`→`Api.java`)가 없으면 → Swagger 인터페이스 갱신 후 진행
+
+이어서 의식할 항목:
+- **B10** enum 값 추가 시 DB CHECK 제약 갱신 SQL(`src/main/resources/data/*.sql`) 포함했는가
+- **B4** raw 예외(E000) 없이 도메인 예외만 던지는가
+
+위반/누락이 있으면 **PR 생성 중단** → 사용자에게 항목 + 근거 1줄 보고 → 수정 또는 "의도된 누락" 확인 후 진행.
 
 ## 5단계: 제목·본문 작성
 
