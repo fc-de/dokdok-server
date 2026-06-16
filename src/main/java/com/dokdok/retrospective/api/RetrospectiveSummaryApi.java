@@ -114,10 +114,11 @@ public interface RetrospectiveSummaryApi {
 
     @Operation(
             summary = "AI 요약 수정 (developer: 오주현)",
-            description = """                                                                                                                                                    
+            description = """
                       약속에 대한 AI 요약을 수정합니다.
                       - 권한: 모임장, 약속장
                       - 제약: 모임장 또는 약속장만 수정 가능
+                      - AI 요약이 존재하지 않는 경우 새로 생성합니다. (수동 작성 가능)
                       """,
             parameters = {
                     @Parameter(name = "meetingId", description = "약속 식별자", in = ParameterIn.PATH, required = true)
@@ -168,10 +169,10 @@ public interface RetrospectiveSummaryApi {
                             examples = @ExampleObject(value = """                                                                                                                
                                       {"code": "R105", "message": "회고에 접근할 권한이 없습니다.", "data": null}
                                       """))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약속 또는 AI 요약을 찾을 수 없음",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "약속 또는 주제를 찾을 수 없음",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            examples = @ExampleObject(value = """                                                                                                                
-                                      {"code": "R106", "message": "AI 요약을 찾을 수 없습니다.", "data": null}
+                            examples = @ExampleObject(value = """
+                                      {"code": "E101", "message": "주제를 찾을 수 없습니다.", "data": null}
                                       """))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
