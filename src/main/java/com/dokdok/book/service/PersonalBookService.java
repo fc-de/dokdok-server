@@ -58,6 +58,18 @@ public class PersonalBookService {
     }
 
     @Transactional
+    public void createBookForUser(BookCreateRequest bookCreateRequest, Gathering gathering, Long userId) {
+        User userEntity = userValidator.findUserOrThrow(userId);
+        Book entity = bookRepository.findByIsbn(bookCreateRequest.isbn())
+                .orElseGet(() -> bookRepository.save(bookCreateRequest.of()));
+
+        PersonalBook personalBookEntity = PersonalBook.create(
+                userEntity, entity, BookReadingStatus.READING, gathering
+        );
+        personalBookRepository.save(personalBookEntity);
+    }
+
+    @Transactional
     public PersonalBookDetailResponse updateReadingStatus(Long personalBookId) {
         // 사용자 유효성 검증
         User userEntity = userValidator.findUserOrThrow(SecurityUtil.getCurrentUserId());
