@@ -18,6 +18,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -28,6 +29,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
@@ -112,7 +114,7 @@ class RetrospectiveSummaryServiceTest {
     }
 
     @Test
-    @DisplayName("AI 요약 수정 시 요약이 갱신되고 결과를 반환한다")
+    @DisplayName("AI 요약이 이미 존재하는 경우 수정 시 요약이 갱신되고 결과를 반환한다")
     void updateRetrospectiveSummary_updatesSummaryAndReturns() {
         RetrospectiveSummaryUpdateRequest request = RetrospectiveSummaryUpdateRequest.builder()
                 .topics(List.of(RetrospectiveSummaryUpdateRequest.TopicSummaryUpdateRequest.builder()
@@ -131,6 +133,7 @@ class RetrospectiveSummaryServiceTest {
             when(meetingValidator.findMeetingOrThrow(meetingId)).thenReturn(meeting);
             doNothing().when(retrospectiveValidator)
                     .validateSummaryUpdatePermission(gatheringId, meetingId, userId);
+            when(topicRepository.findById(topic.getId())).thenReturn(Optional.of(topic));
             when(topicRetrospectiveSummaryRepository.findByTopicId(topic.getId()))
                     .thenReturn(Optional.of(summary));
             when(topicRepository.findByMeetingIdAndTopicStatusOrderByConfirmOrderAsc(meetingId, TopicStatus.CONFIRMED))
@@ -147,8 +150,56 @@ class RetrospectiveSummaryServiceTest {
             assertThat(response.topics().get(0).summary()).isEqualTo("수정 요약");
             assertThat(response.topics().get(0).keyPoints()).hasSize(1);
             assertThat(response.topics().get(0).keyPoints().get(0).title()).isEqualTo("수정 포인트");
+            verify(topicRetrospectiveSummaryRepository, times(1)).save(summary);
             // update에서 1번, 내부 getRetrospectiveSummary에서 1번 = 총 2번 호출
             verify(retrospectiveValidator, times(2)).validateSummaryUpdatePermission(gatheringId, meetingId, userId);
+        }
+    }
+
+    @Test
+    @DisplayName("AI 요약이 없는 경우 수정 시 새로 생성하여 저장한다")
+    void updateRetrospectiveSummary_whenNoExistingSummary_createsNewSummary() {
+        RetrospectiveSummaryUpdateRequest request = RetrospectiveSummaryUpdateRequest.builder()
+                .topics(List.of(RetrospectiveSummaryUpdateRequest.TopicSummaryUpdateRequest.builder()
+                        .topicId(topic.getId())
+                        .summary("새 요약")
+                        .keyPoints(List.of(RetrospectiveSummaryUpdateRequest.KeyPointUpdateRequest.builder()
+                                .title("새 포인트")
+                                .details(List.of("새 상세"))
+                                .build()))
+                        .build()))
+                .build();
+
+        TopicRetrospectiveSummary newSummary = TopicRetrospectiveSummary.builder()
+                .topic(topic)
+                .summary("새 요약")
+                .keyPoints(List.of(new TopicRetrospectiveSummary.KeyPoint("새 포인트", List.of("새 상세"))))
+                .build();
+
+        try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
+            securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
+
+            when(meetingValidator.findMeetingOrThrow(meetingId)).thenReturn(meeting);
+            doNothing().when(retrospectiveValidator)
+                    .validateSummaryUpdatePermission(gatheringId, meetingId, userId);
+            when(topicRepository.findById(topic.getId())).thenReturn(Optional.of(topic));
+            when(topicRetrospectiveSummaryRepository.findByTopicId(topic.getId()))
+                    .thenReturn(Optional.empty());
+            when(topicRetrospectiveSummaryRepository.save(any(TopicRetrospectiveSummary.class)))
+                    .thenReturn(newSummary);
+            when(topicRepository.findByMeetingIdAndTopicStatusOrderByConfirmOrderAsc(meetingId, TopicStatus.CONFIRMED))
+                    .thenReturn(List.of(topic));
+            when(topicRetrospectiveSummaryRepository.findAllByTopicIdIn(List.of(topic.getId())))
+                    .thenReturn(List.of(newSummary));
+
+            RetrospectiveSummaryResponse response =
+                    retrospectiveSummaryService.updateRetrospectiveSummary(meetingId, request);
+
+            ArgumentCaptor<TopicRetrospectiveSummary> captor = ArgumentCaptor.forClass(TopicRetrospectiveSummary.class);
+            verify(topicRetrospectiveSummaryRepository, times(1)).save(captor.capture());
+            assertThat(captor.getValue().getTopic()).isEqualTo(topic);
+            assertThat(captor.getValue().getSummary()).isEqualTo("새 요약");
+            assertThat(response.topics().get(0).summary()).isEqualTo("새 요약");
         }
     }
 

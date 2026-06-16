@@ -11,6 +11,8 @@ import com.dokdok.retrospective.exception.RetrospectiveException;
 import com.dokdok.retrospective.repository.TopicRetrospectiveSummaryRepository;
 import com.dokdok.topic.entity.Topic;
 import com.dokdok.topic.entity.TopicStatus;
+import com.dokdok.topic.exception.TopicErrorCode;
+import com.dokdok.topic.exception.TopicException;
 import com.dokdok.topic.repository.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -83,9 +85,12 @@ public class RetrospectiveSummaryService {
 
         // 각 토픽별 요약 수정
         for (RetrospectiveSummaryUpdateRequest.TopicSummaryUpdateRequest topicRequest : request.topics()) {
+            Topic topic = topicRepository.findById(topicRequest.topicId())
+                    .orElseThrow(() -> new TopicException(TopicErrorCode.TOPIC_NOT_FOUND));
+
             TopicRetrospectiveSummary summary = topicRetrospectiveSummaryRepository
                     .findByTopicId(topicRequest.topicId())
-                    .orElseThrow(() -> new RetrospectiveException(RetrospectiveErrorCode.SUMMARY_NOT_FOUND));
+                    .orElseGet(() -> TopicRetrospectiveSummary.builder().topic(topic).build());
 
             // KeyPointUpdateRequest -> KeyPoint 변환
             List<TopicRetrospectiveSummary.KeyPoint> keyPoints = topicRequest.keyPoints().stream()
@@ -93,6 +98,7 @@ public class RetrospectiveSummaryService {
                     .toList();
 
             summary.update(topicRequest.summary(), keyPoints);
+            topicRetrospectiveSummaryRepository.save(summary);
         }
 
         // 수정된 결과 반환
