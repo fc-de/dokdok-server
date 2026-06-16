@@ -404,7 +404,7 @@ public class MeetingService {
         if (bookValidator.isDuplicatePersonalBook(userId, book.getId())) {
             return;
         }
-        personalBookService.createBook(BookCreateRequest.from(book), gathering);
+        personalBookService.createBookForUser(BookCreateRequest.from(book), gathering, userId);
 
     }
 

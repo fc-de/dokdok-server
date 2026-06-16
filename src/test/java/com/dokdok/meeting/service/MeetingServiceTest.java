@@ -771,6 +771,61 @@ class MeetingServiceTest {
         }
     }
 
+    @DisplayName("모임장이 약속을 확정하면 약속 제안자(멤버)의 책장에 책이 등록된다.")
+    @Test
+    void givenMemberCreatedMeeting_whenLeaderConfirm_thenBookSavedForMeetingLeader() {
+        // given
+        Long meetingId = 1L;
+        Long gatheringLeaderId = 10L;
+        Long meetingLeaderId = leader.getId(); // 5L 이 아닌 setUp의 leader(10L)와 다른 멤버
+
+        User meetingLeader = User.builder()
+                .id(5L)
+                .nickname("meetingProposer")
+                .build();
+        Gathering gatheringWithLeader = Gathering.builder()
+                .id(100L)
+                .gatheringName("gathering")
+                .gatheringLeader(leader) // leader id=10
+                .invitationLink("link")
+                .build();
+        Meeting memberMeeting = Meeting.builder()
+                .id(meetingId)
+                .meetingName("Meeting 1")
+                .meetingStatus(MeetingStatus.PENDING)
+                .meetingStartDate(LocalDateTime.now().plusDays(2))
+                .meetingEndDate(LocalDateTime.now().plusDays(2).plusHours(1))
+                .meetingLeader(meetingLeader) // 약속 제안자는 멤버(id=5)
+                .gathering(gatheringWithLeader)
+                .book(sampleBook())
+                .build();
+
+        given(meetingValidator.findMeetingOrThrow(meetingId)).willReturn(memberMeeting);
+        given(meetingRepository.existsOverlappingMeeting(
+                gatheringWithLeader.getId(),
+                MeetingStatus.CONFIRMED,
+                meetingId,
+                memberMeeting.getMeetingStartDate(),
+                memberMeeting.getMeetingEndDate()
+        )).willReturn(false);
+        given(meetingMemberRepository.findByMeetingIdAndUserId(meetingId, meetingLeader.getId()))
+                .willReturn(Optional.empty());
+        given(bookValidator.isDuplicatePersonalBook(meetingLeader.getId(), sampleBook().getId()))
+                .willReturn(false);
+
+        try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
+            securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(gatheringLeaderId);
+
+            // when
+            meetingService.confirmMeeting(meetingId);
+
+            // then: 약속 제안자(id=5)의 책장에 책이 등록되어야 한다
+            verify(personalBookService).createBookForUser(any(), any(), eq(meetingLeader.getId()));
+            // 모임장(id=10) 책장에는 등록되지 않아야 한다
+            verify(personalBookService, never()).createBookForUser(any(), any(), eq(gatheringLeaderId));
+        }
+    }
+
     @DisplayName("시간이 겹치는 확정 약속이 있으면 다른 약속을 확정할 수 없다.")
     @Test
     void givenConfirmedMeetingExists_whenConfirm_thenThrowMeetingException() {
