@@ -39,7 +39,7 @@ public record BookReviewResponse(
                 review.getUser().getId(),
                 review.getRating(),
                 keywordInfos,
-                review.getCreatedAt()
+                review.getUpdatedAt()
         );
     }
 

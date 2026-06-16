@@ -337,7 +337,9 @@ class BookReviewServiceTest {
             when(keywordValidator.validateAndGetSelectableKeyword(5L)).thenReturn(newKeyword);
             when(keywordValidator.validateAndGetSelectableKeyword(8L)).thenReturn(newKeywordSecond);
 
+            LocalDateTime beforeUpdate = LocalDateTime.now();
             BookReviewResponse response = bookReviewService.updateMyReview(1L, request);
+            LocalDateTime afterUpdate = LocalDateTime.now();
 
             assertThat(review.getRating()).isEqualTo(new BigDecimal("3.5"));
             assertThat(review.getKeywords()).hasSize(2);
@@ -346,6 +348,7 @@ class BookReviewServiceTest {
                     new BookReviewResponse.KeywordInfo(8L, "위로", KeywordType.IMPRESSION)
             );
             assertThat(response.reviewId()).isEqualTo(10L);
+            assertThat(response.createdAt()).isBetween(beforeUpdate, afterUpdate);
         }
     }
 
