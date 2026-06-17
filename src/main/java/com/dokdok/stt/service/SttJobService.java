@@ -72,26 +72,24 @@ public class SttJobService {
         Meeting meeting = meetingValidator.findMeetingOrThrow(meetingId);
         User user = SecurityUtil.getCurrentUserEntity();
 
-        if (file != null && file.isEmpty()) {
-            throw new GlobalException(GlobalErrorCode.INVALID_INPUT_VALUE);
-        }
+        boolean hasFile = file != null && !file.isEmpty();
 
         List<SttRequest.PreAnswer> preAnswers = buildPreAnswers(meetingId);
-        if (file == null && preAnswers.isEmpty()) {
+        if (!hasFile && preAnswers.isEmpty()) {
             throw new GlobalException(GlobalErrorCode.INVALID_INPUT_VALUE);
         }
 
         Path tempFilePath = null;
-        if (file != null) {
+        if (hasFile) {
             validateFile(file);
             tempFilePath = saveToTemp(file);
         }
         SttJob job = SttJob.builder()
                 .meeting(meeting)
                 .user(user)
-                .originalFilename(file != null ? file.getOriginalFilename() : null)
-                .contentType(file != null ? file.getContentType() : null)
-                .fileSize(file != null ? file.getSize() : null)
+                .originalFilename(hasFile ? file.getOriginalFilename() : null)
+                .contentType(hasFile ? file.getContentType() : null)
+                .fileSize(hasFile ? file.getSize() : null)
                 .tempFilePath(tempFilePath != null ? tempFilePath.toString() : null)
                 .status(SttJobStatus.PROCESSING)
                 .build();
