@@ -1,5 +1,7 @@
 package com.dokdok.retrospective.service;
 
+import com.dokdok.book.entity.Book;
+import com.dokdok.book.entity.PersonalBook;
 import com.dokdok.book.entity.ReflectionRecordType;
 import com.dokdok.gathering.entity.Gathering;
 import com.dokdok.global.exception.GlobalErrorCode;
@@ -1267,10 +1269,11 @@ class PersonalRetrospectiveServiceTest {
     // ==================== getRetrospectiveRecords 테스트 ====================
 
     @Test
-    @DisplayName("책별 개인 회고 목록을 정상적으로 조회한다 (첫 페이지)")
+    @DisplayName("책별 개인 회고 목록을 정상적으로 조회한다 (첫 페이지) - personalBookId 를 실제 bookId 로 변환해 조회한다")
     void getRetrospectiveRecords_success() {
         // given
-        Long bookId = 1L;
+        Long personalBookId = 7L;   // 책장 항목 PK
+        Long bookId = 1L;           // 실제 도서 PK (personalBookId 와 다름)
         Long userId = 3L;
         Long retrospectiveId = 100L;
         int pageSize = 10;
@@ -1289,6 +1292,16 @@ class PersonalRetrospectiveServiceTest {
                 .id(userId).
                 build();
 
+        Book book = Book.builder()
+                .id(bookId)
+                .build();
+
+        PersonalBook personalBook = PersonalBook.builder()
+                .id(personalBookId)
+                .user(user)
+                .book(book)
+                .build();
+
         PersonalMeetingRetrospective retrospective = PersonalMeetingRetrospective.builder()
                 .id(retrospectiveId)
                 .meeting(meeting)
@@ -1300,7 +1313,7 @@ class PersonalRetrospectiveServiceTest {
         try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
             securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
 
-            doNothing().when(bookValidator).validateBook(bookId);
+            when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
             when(personalRetrospectiveRepository.findRetrospectivesFirstPage(eq(bookId), eq(userId), any()))
                     .thenReturn(retrospectives);
             when(changedThoughtRepository.findByRetrospectiveIds(List.of(retrospectiveId)))
@@ -1319,15 +1332,17 @@ class PersonalRetrospectiveServiceTest {
 
             // when
             CursorResponse<RetrospectiveRecordResponse, RetrospectiveRecordsCursor> response =
-                    personalRetrospectiveService.getRetrospectiveRecords(bookId, pageSize, null, null);
+                    personalRetrospectiveService.getRetrospectiveRecords(personalBookId, pageSize, null, null);
 
             // then
             assertThat(response.items()).hasSize(1);
             assertThat(response.pageSize()).isEqualTo(pageSize);
             assertThat(response.hasNext()).isFalse();
 
-            verify(bookValidator).validateBook(bookId);
+            verify(bookValidator).validatePersonalBook(userId, personalBookId);
+            // personalBookId 가 아니라 변환된 실제 bookId 로 조회해야 한다 (회귀 방지)
             verify(personalRetrospectiveRepository).findRetrospectivesFirstPage(eq(bookId), eq(userId), any());
+            verify(personalRetrospectiveRepository).countRetrospectivesByBookAndUser(bookId, userId);
             verify(changedThoughtRepository).findByRetrospectiveIds(List.of(retrospectiveId));
             verify(othersPerspectiveRepository).findByRetrospectiveIds(List.of(retrospectiveId));
             verify(freeTextRepository).findByRetrospectiveIds(List.of(retrospectiveId));
@@ -1339,27 +1354,36 @@ class PersonalRetrospectiveServiceTest {
     @DisplayName("회고가 없으면 빈 리스트를 반환한다")
     void getRetrospectiveRecords_returnsEmptyList_whenNoRetrospectives() {
         // given
+        Long personalBookId = 7L;
         Long bookId = 1L;
         Long userId = 3L;
         int pageSize = 10;
 
+        User user = User.builder().id(userId).build();
+        Book book = Book.builder().id(bookId).build();
+        PersonalBook personalBook = PersonalBook.builder()
+                .id(personalBookId)
+                .user(user)
+                .book(book)
+                .build();
+
         try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
             securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
 
-            doNothing().when(bookValidator).validateBook(bookId);
+            when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
             when(personalRetrospectiveRepository.findRetrospectivesFirstPage(eq(bookId), eq(userId), any()))
                     .thenReturn(List.of());
 
             // when
             CursorResponse<RetrospectiveRecordResponse, RetrospectiveRecordsCursor> response =
-                    personalRetrospectiveService.getRetrospectiveRecords(bookId, pageSize, null, null);
+                    personalRetrospectiveService.getRetrospectiveRecords(personalBookId, pageSize, null, null);
 
             // then
             assertThat(response.items()).isEmpty();
             assertThat(response.hasNext()).isFalse();
             assertThat(response.nextCursor()).isNull();
 
-            verify(bookValidator).validateBook(bookId);
+            verify(bookValidator).validatePersonalBook(userId, personalBookId);
             verify(personalRetrospectiveRepository).findRetrospectivesFirstPage(eq(bookId), eq(userId), any());
             verify(changedThoughtRepository, never()).findByRetrospectiveIds(any());
             verify(othersPerspectiveRepository, never()).findByRetrospectiveIds(any());
@@ -1368,23 +1392,23 @@ class PersonalRetrospectiveServiceTest {
     }
 
     @Test
-    @DisplayName("책이 존재하지 않으면 예외가 발생한다")
-    void getRetrospectiveRecords_throwsWhenBookNotFound() {
+    @DisplayName("책장에 없는 책이면 예외가 발생한다")
+    void getRetrospectiveRecords_throwsWhenBookNotInShelf() {
         // given
-        Long bookId = 999L;
+        Long personalBookId = 999L;
         Long userId = 3L;
         int pageSize = 10;
 
         try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
             securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
 
-            doThrow(new BookException(BookErrorCode.BOOK_NOT_FOUND))
-                    .when(bookValidator).validateBook(bookId);
+            doThrow(new BookException(BookErrorCode.BOOK_NOT_IN_SHELF))
+                    .when(bookValidator).validatePersonalBook(userId, personalBookId);
 
             // when & then
-            assertThatThrownBy(() -> personalRetrospectiveService.getRetrospectiveRecords(bookId, pageSize, null, null))
+            assertThatThrownBy(() -> personalRetrospectiveService.getRetrospectiveRecords(personalBookId, pageSize, null, null))
                     .isInstanceOf(BookException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", BookErrorCode.BOOK_NOT_FOUND);
+                    .hasFieldOrPropertyWithValue("errorCode", BookErrorCode.BOOK_NOT_IN_SHELF);
 
             verify(personalRetrospectiveRepository, never()).findRetrospectivesFirstPage(any(), any(), any());
         }
@@ -1394,7 +1418,7 @@ class PersonalRetrospectiveServiceTest {
     @DisplayName("인증 정보가 없으면 예외가 발생한다 - 회고 기록 조회")
     void getRetrospectiveRecords_throwsWhenUnauthenticated() {
         // given
-        Long bookId = 1L;
+        Long personalBookId = 7L;
         int pageSize = 10;
 
         try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
@@ -1402,11 +1426,11 @@ class PersonalRetrospectiveServiceTest {
                     .thenThrow(new GlobalException(GlobalErrorCode.UNAUTHORIZED));
 
             // when & then
-            assertThatThrownBy(() -> personalRetrospectiveService.getRetrospectiveRecords(bookId, pageSize, null, null))
+            assertThatThrownBy(() -> personalRetrospectiveService.getRetrospectiveRecords(personalBookId, pageSize, null, null))
                     .isInstanceOf(GlobalException.class)
                     .hasFieldOrPropertyWithValue("errorCode", GlobalErrorCode.UNAUTHORIZED);
 
-            verify(bookValidator, never()).validateBook(any());
+            verify(bookValidator, never()).validatePersonalBook(any(), any());
         }
     }
 

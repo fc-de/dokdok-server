@@ -1,5 +1,6 @@
 package com.dokdok.retrospective.service;
 
+import com.dokdok.book.entity.PersonalBook;
 import com.dokdok.book.service.BookValidator;
 import com.dokdok.global.response.CursorResponse;
 import com.dokdok.meeting.exception.MeetingErrorCode;
@@ -195,7 +196,8 @@ public class PersonalRetrospectiveService {
     ) {
         Long userId = SecurityUtil.getCurrentUserId();
 
-        bookValidator.validateBook(personalBookId);
+        PersonalBook personalBook = bookValidator.validatePersonalBook(userId, personalBookId);
+        Long bookId = personalBook.getBook().getId();
 
         int fetchSize = pageSize + 1;
         PageRequest pageable = PageRequest.of(0, fetchSize);
@@ -204,14 +206,14 @@ public class PersonalRetrospectiveService {
         Integer totalCount = null;
         if (cursorCreatedAt == null || cursorRetrospectiveId == null) {
             retrospectives = personalRetrospectiveRepository.findRetrospectivesFirstPage(
-                    personalBookId, userId, pageable
+                    bookId, userId, pageable
             );
             totalCount = personalRetrospectiveRepository.countRetrospectivesByBookAndUser(
-                    personalBookId, userId
+                    bookId, userId
             );
         } else {
             retrospectives = personalRetrospectiveRepository.findRetrospectivesAfterCursor(
-                    personalBookId, userId, cursorCreatedAt, cursorRetrospectiveId, pageable
+                    bookId, userId, cursorCreatedAt, cursorRetrospectiveId, pageable
             );
         }
 
