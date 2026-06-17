@@ -31,8 +31,9 @@ public class ReadingTimelineRepository {
             Long cursorSourceId,
             int limit
     ) {
-        String dir = sort == TimelineSortType.ASC ? "ASC" : "DESC";
-        String cursorCompare = sort == TimelineSortType.ASC
+        boolean ascending = sort != null && sort.isAscending();
+        String dir = ascending ? "ASC" : "DESC";
+        String cursorCompare = ascending
                 ? "event_at > :cursorEventAt OR (event_at = :cursorEventAt AND (type_order > :cursorTypeOrder OR (type_order = :cursorTypeOrder AND source_id > :cursorSourceId)))"
                 : "event_at < :cursorEventAt OR (event_at = :cursorEventAt AND (type_order < :cursorTypeOrder OR (type_order = :cursorTypeOrder AND source_id < :cursorSourceId)))";
 
