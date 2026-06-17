@@ -596,7 +596,8 @@ class PersonalReadingRecordServiceTest {
             PersonalBookGatheringProjection p2 = mockProjection(2L, "독서모임B");
 
             when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
-            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, personalBookId))
+            // personalBookId(10L) 가 아니라 변환된 실제 bookId(100L) 로 조회해야 한다 (회귀 방지)
+            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, bookId))
                     .thenReturn(List.of(p1, p2));
 
             // when
@@ -615,7 +616,7 @@ class PersonalReadingRecordServiceTest {
         void getGatheringsForBook_EmptyList() {
             // given
             when(bookValidator.validatePersonalBook(userId, personalBookId)).thenReturn(personalBook);
-            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, personalBookId))
+            when(personalBookRepository.findActiveGatheringsWithMeetingsByUserAndBook(userId, bookId))
                     .thenReturn(List.of());
 
             // when
