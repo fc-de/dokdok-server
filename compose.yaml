@@ -1,9 +1,9 @@
 services:
   app:
     profiles: ["app"]
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # 러너(GitHub Actions)가 GHCR 에 올린 이미지를 받아 띄운다. EC2 빌드 없음.
+    # 태그는 프로필별로 분기: dev → :dev, prod → :prod (CD 워크플로가 동일 태그로 push)
+    image: ghcr.io/fc-de/dokdok-server:${SPRING_PROFILE:-dev}
     container_name: dokdok-${SPRING_PROFILE:-dev}-app
     environment:
       TZ: Asia/Seoul
