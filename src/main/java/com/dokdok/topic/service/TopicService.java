@@ -275,10 +275,11 @@ public class TopicService {
             );
         }
         boolean hasConfirmedTopics = confirmedTopicsCount > 0;
+        boolean isMeetingMember = meetingMemberRepository.existsActiveMemberByMeetingIdAndUserId(meetingId, userId);
 
         ConfirmedTopicsResponse.Actions actions = ConfirmedTopicsResponse.Actions.of(
-                hasSubmitted,
-                isMeetingConfirmed && hasConfirmedTopics && !hasSubmitted
+                isMeetingMember && hasSubmitted,
+                isMeetingMember && isMeetingConfirmed && hasConfirmedTopics && !hasSubmitted
         );
 
         CursorResponse<ConfirmedTopicsResponse.ConfirmedTopicDto, ConfirmedTopicsCursor> page =
