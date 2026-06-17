@@ -635,7 +635,7 @@ public interface PersonalBookRecordApi {
                     - preOpinionTime: 사전 의견 정렬 기준 (MEETING_START | ANSWER_CREATED, 기본값 ANSWER_CREATED)
                     - gatheringId: 미전달 시 전체 조회, 전달 시 해당 모임의 항목만 조회
                     - recordType: 미전달 시 전체 조회, MEMO/QUOTE 전달 시 독서 기록 유형 필터 (회고/사전의견은 영향 없음)
-                    - sort: DESC(최신순, 기본값) / ASC(오래된순)
+                    - sort: LATEST(최신순, 기본값) / OLDEST(오래된순) — DESC/ASC 도 하위 호환으로 허용
 
                     **사용 방법**
                     - 첫 페이지: `?size=10&preOpinionTime=ANSWER_CREATED`
@@ -696,8 +696,8 @@ public interface PersonalBookRecordApi {
             @RequestParam(required = false) Long gatheringId,
             @Parameter(description = "독서 기록 유형 필터 (MEMO | QUOTE, 미전달 시 전체 조회)")
             @RequestParam(required = false) RecordType recordType,
-            @Parameter(description = "정렬 기준 (DESC: 최신순, ASC: 오래된순)", example = "DESC")
-            @RequestParam(required = false, defaultValue = "DESC") TimelineSortType sort
+            @Parameter(description = "정렬 기준 (LATEST: 최신순, OLDEST: 오래된순 / DESC·ASC 하위 호환)", example = "LATEST")
+            @RequestParam(required = false, defaultValue = "LATEST") TimelineSortType sort
     );
 
     @Operation(

@@ -101,7 +101,7 @@ public class PersonalBookRecordController implements PersonalBookRecordApi {
             @RequestParam(required = false, defaultValue = "ANSWER_CREATED") PreOpinionTimeType preOpinionTime,
             @RequestParam(required = false) Long gatheringId,
             @RequestParam(required = false) RecordType recordType,
-            @RequestParam(required = false, defaultValue = "DESC") TimelineSortType sort
+            @RequestParam(required = false, defaultValue = "LATEST") TimelineSortType sort
     ) {
         CursorResponse<ReadingTimelineItem, ReadingTimelineCursor> response =
                 readingTimelineService.getTimeline(
