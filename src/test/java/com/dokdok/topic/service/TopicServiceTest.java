@@ -355,6 +355,8 @@ class TopicServiceTest {
                 given(topicAnswerRepository.existsByMeetingIdAndUserId(meetingId, userId))
                         .willReturn(false);
                 given(meetingValidator.findMeetingOrThrow(meetingId)).willReturn(testMeeting);
+                given(meetingMemberRepository.existsActiveMemberByMeetingIdAndUserId(meetingId, userId))
+                        .willReturn(true);
 
                 ConfirmedTopicsResponse response =
                         topicService.getConfirmedTopics(gatheringId, meetingId, pageSize, null, null);
@@ -373,6 +375,50 @@ class TopicServiceTest {
                 verify(gatheringValidator).validateMembership(gatheringId, userId);
                 verify(meetingValidator).validateMeetingInGathering(meetingId, gatheringId);
                 verify(topicRepository).findConfirmedTopicsFirstPage(eq(meetingId), any(Pageable.class));
+            }
+        }
+
+        @Test
+        @DisplayName("약속 참가자가 아니면 사전 의견 작성 액션이 비활성화된다")
+        void getConfirmedTopics_CannotWriteWhenNotMeetingMember() {
+            Long gatheringId = 1L;
+            Long meetingId = 1L;
+            Long userId = 1L;
+            int pageSize = 10;
+
+            Topic topic = Topic.builder()
+                    .id(12L)
+                    .meeting(testMeeting)
+                    .proposedBy(testUser)
+                    .title("첫 번째 주제")
+                    .description("첫 번째 설명")
+                    .topicType(TopicType.DISCUSSION)
+                    .topicStatus(TopicStatus.CONFIRMED)
+                    .confirmOrder(1)
+                    .build();
+
+            try (MockedStatic<SecurityUtil> securityUtilMock = mockStatic(SecurityUtil.class)) {
+                securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(userId);
+
+                doNothing().when(gatheringValidator).validateMembership(gatheringId, userId);
+                doNothing().when(meetingValidator).validateMeetingInGathering(meetingId, gatheringId);
+                given(topicRepository.findConfirmedTopicsFirstPage(eq(meetingId), any(Pageable.class)))
+                        .willReturn(List.of(topic));
+                given(topicRepository.countByMeetingIdAndTopicStatusAndDeletedAtIsNull(meetingId, TopicStatus.CONFIRMED))
+                        .willReturn(1L);
+                given(topicAnswerRepository.existsByMeetingIdAndUserId(meetingId, userId))
+                        .willReturn(false);
+                given(meetingValidator.findMeetingOrThrow(meetingId)).willReturn(testMeeting);
+                given(meetingMemberRepository.existsActiveMemberByMeetingIdAndUserId(meetingId, userId))
+                        .willReturn(false);
+
+                ConfirmedTopicsResponse response =
+                        topicService.getConfirmedTopics(gatheringId, meetingId, pageSize, null, null);
+
+                assertThat(response.actions().canViewPreOpinions()).isFalse();
+                assertThat(response.actions().canWritePreOpinions()).isFalse();
+
+                verify(meetingMemberRepository).existsActiveMemberByMeetingIdAndUserId(meetingId, userId);
             }
         }
 
